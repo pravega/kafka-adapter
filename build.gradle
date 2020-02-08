@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+}
+
+group 'io.pravega.adapters.kafka'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.4.1'
+}
+
+allprojects {
+    apply plugin: "idea"
+    apply plugin: "eclipse"
+}
+
+dependencies {
+    // compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    // annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    compile "io.pravega:pravega-client:${pravegaVersion}+",
+            "io.pravega:pravega-common:${pravegaVersion}+",
+            "org.slf4j:slf4j-api:${slf4jApiVersion}",
+            "ch.qos.logback:logback-classic:${logbackVersion}",
+            "org.projectlombok:lombok:${lombokVersion}",
+            "org.apache.kafka:kafka-clients:${kafkaVersion}"
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
