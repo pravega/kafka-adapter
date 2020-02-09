@@ -15,28 +15,23 @@ public class KafkaConsumerApp {
     @Test
     public void consumeAPreexistingMessage() {
         Properties props = new Properties();
-        props.put("bootstrap.servers", "192.168.224.222:9092");
-
+        props.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         props.put(ConsumerConfig.CLIENT_ID_CONFIG, "your_client_id");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
         KafkaConsumer myConsumer = new KafkaConsumer(props);
         myConsumer.subscribe(Arrays.asList("testtopic"));
 
-        // Alternatively, use regular expressions:
-        // myConsumer.subscribe(“my-*”);
-
         try {
             while (true) {
                 ConsumerRecords<String, String> records = myConsumer.poll(100);
                 for (ConsumerRecord<String, String> record : records) {
-                    log.info("******* " + record.value());
+                    log.info("Consumed a record containing value: {}", record.value());
                 }
-                // Your processing logic goes here...
+                // Business logic
             }
         }
         finally {
