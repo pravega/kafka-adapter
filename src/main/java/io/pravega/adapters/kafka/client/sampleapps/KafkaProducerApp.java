@@ -1,15 +1,15 @@
+package io.pravega.adapters.kafka.client.sampleapps;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.Test;
 
 import java.util.Properties;
 
 @Slf4j
 public class KafkaProducerApp {
 
-    @Test
-    public void publishAProducerRecord() {
+    public static void main (String[] args) {
         Properties props = new Properties();
         props.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");

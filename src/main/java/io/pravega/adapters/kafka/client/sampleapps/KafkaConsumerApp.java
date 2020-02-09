@@ -1,9 +1,10 @@
+package io.pravega.adapters.kafka.client.sampleapps;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -12,8 +13,7 @@ import java.util.UUID;
 @Slf4j
 public class KafkaConsumerApp {
 
-    @Test
-    public void consumeAPreexistingMessage() {
+    public static void main (String[] args) {
         Properties props = new Properties();
         props.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
