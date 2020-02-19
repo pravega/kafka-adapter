@@ -11,6 +11,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ProducerFencedException;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -104,5 +105,10 @@ public class FakeKafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public void close(long timeout, TimeUnit unit) {
         log.debug("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
+    }
+
+    @Override
+    public void close(Duration timeout) {
+        log.debug("Closing the producer with timeout: {}", timeout);
     }
 }
