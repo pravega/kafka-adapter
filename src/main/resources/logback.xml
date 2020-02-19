@@ -16,4 +16,7 @@
     <root level="debug">
         <appender-ref ref="STDOUT"/>
     </root>
+    <logger name="org.apache.zookeeper" level="error"/>
+    <logger name="org.apache.curator" level="error"/>
+    <logger name="kafka" level="error"/>
 </configuration>
