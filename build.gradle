@@ -1,4 +1,5 @@
 plugins {
+    //id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'java'
 }
 
@@ -12,9 +13,9 @@ repositories {
     mavenCentral()
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.4.1'
-}
+//task wrapper(type: Wrapper) {
+  //  gradleVersion = '5.2.1'
+//}
 
 allprojects {
     apply plugin: "idea"
@@ -23,6 +24,10 @@ allprojects {
 }
 
 dependencies {
+    // Needed to have Lombok work with Gradle 5.x+
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    
     compile group: "io.pravega", name: "pravega-client", version: "${pravegaVersion}+"
     compile group: "io.pravega", name: "pravega-common", version: "${pravegaVersion}+"
     compile group: "org.slf4j", name: "slf4j-api", version: "${slf4jApiVersion}"
@@ -38,3 +43,9 @@ dependencies {
     testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
     testCompile group: "org.hamcrest", name: "hamcrest-all", version: "${hamcrestVersion}"
 }
+
+// Relocating a Package
+//shadowJar {
+  //  relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
+    //relocate 'org.apache.kafka.client.producer.FakeKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
+//}
