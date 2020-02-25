@@ -19,12 +19,11 @@ repositories {
 
 // jar.enabled = false
 
-allprojects {
-    apply plugin: "idea"
-    apply plugin: "eclipse"
-    apply plugin: "maven"
-    apply plugin: "java"
-}
+apply plugin: "idea"
+apply plugin: "eclipse"
+apply plugin: "maven"
+apply plugin: "java"
+apply plugin: 'maven-publish'
 
 dependencies {
     // Needed to have Lombok work with Gradle 5.x+. See https://github.com/rzwitserloot/lombok/issues/1945. 
@@ -45,6 +44,19 @@ dependencies {
     testCompile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}", classifier: "test"
     testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
     testCompile group: "org.hamcrest", name: "hamcrest-all", version: "${hamcrestVersion}"
+}
+
+publishing {
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
+        }
+    }
+    /*repositories {
+        maven {
+            url "http://repo.myorg.com"
+        }
+    }*/
 }
 
 // Relocating a Package
