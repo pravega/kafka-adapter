@@ -17,10 +17,13 @@ repositories {
   //  gradleVersion = '5.2.1'
 //}
 
+// jar.enabled = false
+
 allprojects {
     apply plugin: "idea"
     apply plugin: "eclipse"
     apply plugin: "maven"
+    apply plugin: "java"
 }
 
 dependencies {
