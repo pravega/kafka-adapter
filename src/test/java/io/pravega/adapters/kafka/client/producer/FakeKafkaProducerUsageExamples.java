@@ -1,7 +1,9 @@
 package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.common.ChecksumUtils;
+import io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -12,6 +14,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -56,5 +59,34 @@ public class FakeKafkaProducerUsageExamples {
 
         Future<RecordMetadata> recordMedata = fakeKafkaProducer.send(producerRecord);
         assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()), recordMedata.get().checksum());
+    }
+
+    @Test
+    public void produceUsesFakeConsumer() {
+        Properties consumerConfig = new Properties();
+
+        consumerConfig.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
+        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, "your_client_id");
+        consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+
+        Consumer myConsumer = new FakeKafkaConsumer(consumerConfig);
+        myConsumer.subscribe(Arrays.asList("testtopic"));
+        try {
+            //while (true) {
+                log.info("Polling");
+                ConsumerRecords<String, String> records = myConsumer.poll(100);
+                for (ConsumerRecord<String, String> record : records) {
+                    log.info("Consumed a record containing value: {}", record.value());
+                }
+                // Business logic
+            //}
+        }
+        finally {
+            myConsumer.close();
+        }
     }
 }
