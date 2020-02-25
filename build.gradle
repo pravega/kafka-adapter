@@ -62,5 +62,5 @@ publishing {
 // Relocating a Package
 shadowJar {
     relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
-    relocate 'org.apache.kafka.client.producer.FakeKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
+    relocate 'io.pravega.adapters.kafka.client.producer.FakeKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
 }
