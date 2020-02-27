@@ -63,4 +63,7 @@ publishing {
 shadowJar {
     relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
     relocate 'io.pravega.adapters.kafka.client.producer.FakeKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
+
+    relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
+    relocate 'io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
 }
