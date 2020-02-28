@@ -123,9 +123,9 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         }
 
         EventStreamWriter<String> writer = writersByStream.get(stream);
-
-
-        writer.writeEvent(translateToPravegaMessage(record));
+        String message = translateToPravegaMessage(record);
+        writer.writeEvent(message).join();
+        log.debug("Done writing event message {} to stream {}", message, stream);
         writer.flush();
 
 
