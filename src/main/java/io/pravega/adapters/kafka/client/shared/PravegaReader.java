@@ -55,7 +55,7 @@ public class PravegaReader implements AutoCloseable {
 
         EventRead<String> event = this.reader.readNextEvent(2000);
         if (event != null) {
-            return this.reader.readNextEvent(2000).getEvent();
+            return event.getEvent();
         } else {
             throw new IllegalStateException("No Event");
         }
