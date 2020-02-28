@@ -15,10 +15,10 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class PravegaKafkaProducerUsageExamples {
+
 
     @Test
     public void produceUsesCustomProducer() throws ExecutionException, InterruptedException {
@@ -41,14 +41,13 @@ public class PravegaKafkaProducerUsageExamples {
                 new ProducerRecord<>(topic, 1, "test-key", message);
 
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
-        assertNotNull(recordMedata);
+        assertNotNull(recordMedata.get());
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri)) {
             assertEquals(message, reader.readNext());
         }
     }
 
-    @Ignore
     @Test
     public void writerAndReaderExample() {
         String scope = "test-scope";
@@ -56,15 +55,16 @@ public class PravegaKafkaProducerUsageExamples {
         String controllerUri = "tcp://localhost:9090";
 
         try (PravegaWriter writer = new PravegaWriter(scope, topic, controllerUri)) {
-            writer.writeEvent("Message - 1");
-            writer.writeEvent("Message - 2");
-            writer.writeEvent("Message - 3");
+            writer.writeEvent("Message - 1")
+                    .thenRun(() -> writer.writeEvent("Message - 2"))
+                    .thenRun(() -> writer.writeEvent("Message - 3"))
+                    .join();
         }
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri)) {
-            System.out.println(reader.readNext());
-            System.out.println(reader.readNext());
-            System.out.println(reader.readNext());
+            assertEquals("Message - 1", reader.readNext());
+            assertEquals("Message - 2", reader.readNext());
+            assertEquals("Message - 3", reader.readNext());
         }
     }
 }

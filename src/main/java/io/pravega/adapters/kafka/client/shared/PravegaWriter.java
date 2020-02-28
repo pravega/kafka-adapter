@@ -9,9 +9,12 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.client.stream.impl.JavaSerializer;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @RequiredArgsConstructor
 public class PravegaWriter implements AutoCloseable {
 
@@ -31,6 +34,7 @@ public class PravegaWriter implements AutoCloseable {
 
     public void init() {
         if (isInitialized()) {
+            log.debug("Already initialized");
             return;
         }
         ClientConfig clientConfig = ClientConfig.builder()
@@ -38,31 +42,45 @@ public class PravegaWriter implements AutoCloseable {
                 .build();
 
         streamManager = StreamManager.create(clientConfig);
-        streamManager.createScope(scope);
 
-        streamManager.createStream(scope, stream, StreamConfiguration.builder()
+        boolean isScopeCreated = streamManager.createScope(scope);
+        if (isScopeCreated) {
+            log.info("Created scope {}", scope);
+        } else {
+            log.debug("Scope {} was already created previously {}", scope);
+        }
+
+        boolean isStreamCreated = streamManager.createStream(scope, stream, StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(1))
                 .build());
+
+        if (isStreamCreated) {
+            log.info("Created stream {} in scope {}", stream, scope);
+        } else {
+            log.debug("Stream {} in scope {} was already created previously {}", stream, scope);
+        }
 
         clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
         writer = clientFactory.createEventWriter(stream,
                 new JavaSerializer<String>(),
                 EventWriterConfig.builder().build());
+        log.debug("Creating a writer for scope/stream {}/{}", scope, stream);
     }
 
-    public void writeEvent(String event) {
+    public CompletableFuture<Void> writeEvent(String event) {
         if (!isInitialized()) {
+            log.info("Not initialized already, initializing");
             this.init();
         }
-        writer.writeEvent(event).join();
+        return writer.writeEvent(event);
     }
 
     @Override
     public void close() {
+        log.debug("Closing...");
         writer.close();
         clientFactory.close();
         streamManager.close();
-
     }
 }

@@ -99,23 +99,26 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
             this.writersByStream.putIfAbsent(stream, writer);
         }
 
-        String message = translateToPravegaMessage(record);
-        writer.writeEvent(message);
-        log.debug("Done writing event message {} to stream {}", message, stream);
-
-        CompletableFuture<RecordMetadata> result = new CompletableFuture<>();
-        result.complete(prepareRecordMetadata());
-        return result;
+        final String message = translateToPravegaMessage(record);
+        return writer.writeEvent(message)
+                .exceptionally(ex -> {
+                    log.error("Writing event failed", ex);
+                    return null;
+                })
+                .thenApply(i -> {
+                    log.debug("Done writing event message {} to stream {}", message, stream);
+                    return prepareRecordMetadata();
+                });
     }
 
     private RecordMetadata prepareRecordMetadata() {
-        // TODO: Fix
+        // TODO: Note that Pravega doesn't return these values upon write, so we are returning dummy values.
         return new RecordMetadata(null, -1, -1, System.currentTimeMillis(),
                 null, 0, 0);
     }
 
     private String translateToPravegaMessage(ProducerRecord<K, V> record) {
-        // TODO: Oversimplification right now.
+        // TODO: Oversimplification right now. What about the key?
         return (String) record.value();
     }
 
