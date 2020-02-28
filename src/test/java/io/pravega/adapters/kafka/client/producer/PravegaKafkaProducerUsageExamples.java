@@ -1,6 +1,6 @@
 package io.pravega.adapters.kafka.client.producer;
 
-import io.pravega.adapters.kafka.client.shared.ConfigConstants;
+import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import org.apache.kafka.clients.producer.Producer;
@@ -29,8 +29,8 @@ public class PravegaKafkaProducerUsageExamples {
         String controllerUri = "tcp://localhost:9090";
         String message = "test-message-1";
 
-        producerConfig.put(ConfigConstants.CONTROLLER_URI, controllerUri);
-        producerConfig.put(ConfigConstants.SCOPE, scope);
+        producerConfig.put(PravegaProducerConfig.CONTROLLER_URI, controllerUri);
+        producerConfig.put(PravegaProducerConfig.SCOPE, scope);
         // producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"tcp://localhost:9090");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);

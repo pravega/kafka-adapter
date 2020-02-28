@@ -1,6 +1,6 @@
 package io.pravega.adapters.kafka.client.producer;
 
-import io.pravega.adapters.kafka.client.shared.ConfigConstants;
+import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
@@ -50,7 +50,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         properties = kafkaConfigProperties;
         interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
 
-        String controllerURI = this.properties.getProperty(ConfigConstants.CONTROLLER_URI);
+        String controllerURI = this.properties.getProperty(PravegaProducerConfig.CONTROLLER_URI);
         clientConfig = ClientConfig.builder()
                 .controllerURI(URI.create(controllerURI))
                 .build();
@@ -58,7 +58,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         streamManager = StreamManager.create(clientConfig);
         log.debug("Created a stream manager");
 
-        scope = properties.getProperty(ConfigConstants.SCOPE, "migrated_from_kafka");
+        scope = properties.getProperty(PravegaProducerConfig.SCOPE, "migrated_from_kafka");
         streamManager.createScope(scope);
         log.debug("Created a scope [{}]", scope);
 
