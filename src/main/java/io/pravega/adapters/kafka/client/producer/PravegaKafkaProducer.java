@@ -1,14 +1,7 @@
 package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
-import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.StreamManager;
-import io.pravega.client.stream.EventStreamWriter;
-import io.pravega.client.stream.EventWriterConfig;
-import io.pravega.client.stream.ScalingPolicy;
-import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.JavaSerializer;
+import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
@@ -22,9 +15,13 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ProducerFencedException;
 
-import java.net.URI;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -36,33 +33,20 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final ProducerInterceptors<K, V> interceptors;
 
-    private final ClientConfig clientConfig;
+    private final String controllerUri;
 
     private final String scope;
 
-    private final StreamManager streamManager;
 
-    private final EventStreamClientFactory clientFactory;
-
-    private final Map<String, EventStreamWriter<String>> writersByStream = new HashMap<>();
+    private final Map<String, PravegaWriter> writersByStream = new HashMap<>();
 
     public PravegaKafkaProducer(Properties kafkaConfigProperties) {
         properties = kafkaConfigProperties;
-        interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
 
-        String controllerURI = this.properties.getProperty(PravegaProducerConfig.CONTROLLER_URI);
-        clientConfig = ClientConfig.builder()
-                .controllerURI(URI.create(controllerURI))
-                .build();
-
-        streamManager = StreamManager.create(clientConfig);
-        log.debug("Created a stream manager");
-
+        controllerUri = properties.getProperty(PravegaProducerConfig.CONTROLLER_URI, "localhost:9090");
         scope = properties.getProperty(PravegaProducerConfig.SCOPE, "migrated_from_kafka");
-        streamManager.createScope(scope);
-        log.debug("Created a scope [{}]", scope);
 
-        clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+        interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
     }
 
     @Override
@@ -106,43 +90,22 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
         String stream = record.topic();
-        log.debug("Stream: {}", stream);
+        PravegaWriter writer;
+        if (this.writersByStream.containsKey(stream)) {
+            writer = this.writersByStream.get(stream);
 
-        // int numSegments = record.partition();
-        int numSegments = 1;
-
-        boolean isStreamCreated = streamManager.createStream(scope, stream, StreamConfiguration.builder()
-                .scalingPolicy(ScalingPolicy.fixed(numSegments))
-                .build());
-        log.debug("Created a stream with name [{}]", stream);
-
-        if (isStreamCreated && writersByStream.get(stream) == null) {
-            EventStreamWriter<String> writer = clientFactory.createEventWriter(stream, new JavaSerializer<String>(),
-                    EventWriterConfig.builder().build());
-            writersByStream.putIfAbsent(stream, writer);
+        } else {
+            writer = new PravegaWriter(scope, stream, controllerUri);
+            this.writersByStream.putIfAbsent(stream, writer);
         }
 
-        EventStreamWriter<String> writer = writersByStream.get(stream);
         String message = translateToPravegaMessage(record);
-        writer.writeEvent(message).join();
+        writer.writeEvent(message);
         log.debug("Done writing event message {} to stream {}", message, stream);
-        writer.flush();
-
 
         CompletableFuture<RecordMetadata> result = new CompletableFuture<>();
         result.complete(prepareRecordMetadata());
         return result;
-
-        /*TopicPartition topicPartition = new TopicPartition("foobar", 0);
-        long timestamp = System.currentTimeMillis();
-        int keySize = 2;
-        int valueSize = 4;
-        Long checksum = ChecksumUtils.computeCRC32Checksum(record.toString());
-
-        RecordMetadata recordMetadata = new RecordMetadata(topicPartition, -1L, -1L,
-                timestamp, checksum, keySize, valueSize);
-        return CompletableFuture.completedFuture(recordMetadata);
-        */
     }
 
     private RecordMetadata prepareRecordMetadata() {
@@ -193,7 +156,6 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     private void cleanup() {
-        streamManager.close();
         writersByStream.forEach((k, v) -> v.close());
     }
 }
