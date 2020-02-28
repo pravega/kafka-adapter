@@ -54,7 +54,6 @@ public class PravegaKafkaProducerUsageExamples {
         String scope = "test-scope";
         String topic = "test-stream-" + Math.random();
         String controllerUri = "tcp://localhost:9090";
-        String message = "test-message-1";
 
         try (PravegaWriter writer = new PravegaWriter(scope, topic, controllerUri)) {
             writer.writeEvent("Message - 1");
