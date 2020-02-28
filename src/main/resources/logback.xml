@@ -8,15 +8,15 @@
         </layout>
     </appender>
 
-    <logger name="org.apache.kafka" level="error">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-
-    <root level="debug">
+    <root level="error">
         <appender-ref ref="STDOUT"/>
     </root>
+
     <logger name="org.apache.zookeeper" level="error"/>
+    <logger name="org.apache.kafka" level="error"/>
     <logger name="org.apache.curator" level="error"/>
+    <logger name="io.grpc.netty" level="error"/>
+    <logger name="io.pravega.adapters" level="debug"/>
+    <logger name="io.netty" level="error"/>
     <logger name="kafka" level="error"/>
 </configuration>
