@@ -4,16 +4,17 @@ import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
+
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.Test;
-
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,7 +28,7 @@ public class PravegaKafkaProducerUsageExamples {
         String topic = "test-stream";
         String message = "test-message-1";
 
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"tcp://localhost:9090");
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 

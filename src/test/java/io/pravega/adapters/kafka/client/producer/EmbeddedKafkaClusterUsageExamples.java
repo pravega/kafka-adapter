@@ -1,8 +1,12 @@
 package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.common.ChecksumUtils;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import kafka.utils.MockTime;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -18,32 +22,25 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import static org.junit.Assert.assertEquals;
 
 /**
  * Demonstrates a basic usage of EmbeddedKafkaCluster.
  */
-@Slf4j
 public class EmbeddedKafkaClusterUsageExamples {
 
     @ClassRule
-    public static final EmbeddedKafkaCluster kafkaCluster = new EmbeddedKafkaCluster(1);
+    public static final EmbeddedKafkaCluster KAFKA_CLUSTER = new EmbeddedKafkaCluster(1);
 
-    private final MockTime mockTime = kafkaCluster.time;
+    private final MockTime mockTime = KAFKA_CLUSTER.time;
 
     @BeforeClass
     public static void createTopics() throws InterruptedException {
-        kafkaCluster.createTopic("test.topic.1");
-        log.info("Done creating topic 1");
+        KAFKA_CLUSTER.createTopic("test.topic.1");
+        System.out.println("Done creating topic 1");
 
-        kafkaCluster.createTopic("test.topic.2");
-        log.info("Done creating topic 2");
+        KAFKA_CLUSTER.createTopic("test.topic.2");
+        System.out.println("Done creating topic 2");
     }
 
     @Test
@@ -52,7 +49,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Prepare producer configuration
         Properties producerConfig = new Properties();
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         producerConfig.put(ProducerConfig.CLIENT_ID_CONFIG, "TestProducerApp");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -66,7 +63,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Prepare consumer configuration
         Properties consumerConfig = new Properties();
-        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, "TestConsumerApp");
         consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -87,7 +84,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Prepare producer configuration
         Properties producerConfig = new Properties();
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         producerConfig.put(ProducerConfig.CLIENT_ID_CONFIG, "TestProducerApp");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -97,7 +94,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Produce records
         KafkaProducer<String, String> producer = new KafkaProducer<>(producerConfig);
-        log.info("Done creating producer");
+        System.out.println("Done creating producer");
 
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>(topic, 1, "test-key", "test-value");
@@ -105,7 +102,7 @@ public class EmbeddedKafkaClusterUsageExamples {
         Future<RecordMetadata> recordMetadataFuture = producer.send(producerRecord);
         RecordMetadata recordMetadata = recordMetadataFuture.get();
 
-        log.info("Record metadata: {}", recordMetadata);
+        System.out.println("Record metadata: " + recordMetadata);
 
         /*
         IntegrationTestUtils.produceValuesSynchronously(topic, Arrays.asList("Message-1", "Message-2", "Message-3"),
@@ -113,7 +110,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Prepare consumer configuration
         Properties consumerConfig = new Properties();
-        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, "TestConsumerApp");
         consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
@@ -132,20 +129,21 @@ public class EmbeddedKafkaClusterUsageExamples {
     @Test
     public void useFakeProducer() throws Exception {
         Properties producerConfig = new Properties();
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         producerConfig.put(ProducerConfig.CLIENT_ID_CONFIG, "TestAppWithFakeProducer");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, DefaultPartitioner.class);
 
         FakeKafkaProducer<String, String> kafkaProducer = new FakeKafkaProducer<>(producerConfig);
-        log.info("Done creating Kafka producer");
+        System.out.println("Done creating Kafka producer");
 
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>("test.topic.1", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
-        assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()), recordMedataFuture.get().checksum());
+        assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()),
+                recordMedataFuture.get().checksum());
     }
 
 }

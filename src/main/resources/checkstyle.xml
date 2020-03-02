@@ -366,10 +366,10 @@
         </module>
 
         <!-- No System.out -->
-        <module name="Regexp">
+        <!--<module name="Regexp">
             <property name="format" value="System\.out\.println" />
             <property name="illegalPattern" value="true" />
-        </module>
+        </module>-->
 
         <!-- No System.err -->
         <module name="Regexp">

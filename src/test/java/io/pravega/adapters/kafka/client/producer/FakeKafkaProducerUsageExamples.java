@@ -2,8 +2,17 @@ package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.common.ChecksumUtils;
 import io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.*;
+
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -12,21 +21,14 @@ import org.apache.kafka.clients.producer.internals.DefaultPartitioner;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import static org.junit.Assert.assertEquals;
 
-@Slf4j
 public class FakeKafkaProducerUsageExamples {
 
     @Test
     public void produceUsesFakeProducer() throws ExecutionException, InterruptedException {
         Properties producerConfig = new Properties();
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"dummyUrl");
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "dummyUrl");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, DefaultPartitioner.class);
@@ -44,7 +46,7 @@ public class FakeKafkaProducerUsageExamples {
     @Test
     public void producedMessageIsInterceptedByFakeInterceptor() throws ExecutionException, InterruptedException {
         Properties kafkaConfigProperties = new Properties();
-        kafkaConfigProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"dummyUrl");
+        kafkaConfigProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "dummyUrl");
         kafkaConfigProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         kafkaConfigProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         kafkaConfigProperties.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, DefaultPartitioner.class);
@@ -76,16 +78,12 @@ public class FakeKafkaProducerUsageExamples {
         Consumer myConsumer = new FakeKafkaConsumer(consumerConfig);
         myConsumer.subscribe(Arrays.asList("testtopic"));
         try {
-            //while (true) {
-                log.info("Polling");
-                ConsumerRecords<String, String> records = myConsumer.poll(100);
-                for (ConsumerRecord<String, String> record : records) {
-                    log.info("Consumed a record containing value: {}", record.value());
-                }
-                // Business logic
-            //}
-        }
-        finally {
+            System.out.println("Polling");
+            ConsumerRecords<String, String> records = myConsumer.poll(100);
+            for (ConsumerRecord<String, String> record : records) {
+                System.out.println("Consumed a record containing value: " + record.value());
+            }
+        } finally {
             myConsumer.close();
         }
     }
