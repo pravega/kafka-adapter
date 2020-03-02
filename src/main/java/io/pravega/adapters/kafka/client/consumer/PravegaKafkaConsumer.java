@@ -1,20 +1,30 @@
 package io.pravega.adapters.kafka.client.consumer;
 
+import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaReader;
+import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.ReinitializationRequiredException;
+
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -25,16 +35,27 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 
 @Slf4j
-public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
+public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final ConsumerConfig consumerConfig;
 
     private final List<ConsumerInterceptor<K, V>> interceptors;
 
-    public FakeKafkaConsumer(Properties kafkaConfigProperties) {
-         consumerConfig = new ConsumerConfig(kafkaConfigProperties);
-         interceptors = (List) consumerConfig.getConfiguredInstances(
-                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
+    private final String controllerUri;
+
+    private final String scope;
+
+    private final Map<String, PravegaReader> readersByStream = new HashMap<>();
+
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+
+    public PravegaKafkaConsumer(Properties kafkaConfigProperties) {
+        consumerConfig = new ConsumerConfig(kafkaConfigProperties);
+        interceptors = (List) consumerConfig.getConfiguredInstances(
+                ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
+
+        controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
+        scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
     }
 
     @Override
@@ -51,14 +72,19 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void subscribe(Collection<String> topics) {
-        log.info("Subscribing to topics: {}", topics);
+        subscribe(topics, null);
 
     }
 
     @Override
-    public void subscribe(Collection<String> topics, ConsumerRebalanceListener callback) {
+    public void subscribe(@NonNull Collection<String> topics, ConsumerRebalanceListener callback) {
         log.info("Subscribing to topics: {}, with callback", topics);
+        ensureNotClosed();
 
+        for (String topic : topics) {
+            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri);
+            readersByStream.putIfAbsent(topic, reader);
+        }
     }
 
     @Override
@@ -68,12 +94,12 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
-        log.info("Subscribing. pattern: {}, callback: {}", pattern, callback);
+        throw new UnsupportedOperationException("Subscribing to topic(s) matching specified pattern is not supported");
     }
 
     @Override
     public void subscribe(Pattern pattern) {
-        log.debug("Subscribing. pattern: {}", pattern);
+        subscribe(pattern, null);
     }
 
     @Override
@@ -85,8 +111,68 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
         log.info("Polling with timeout {}", timeout);
+        ConsumerRecords<String, String> consumerRecords = read(timeout);
+        return invokeInterceptors(this.interceptors, consumerRecords);
+    }
 
-        return (ConsumerRecords<K, V>) ConsumerRecords.EMPTY;
+    private ConsumerRecords<String, String> read(long timeout) {
+        // TODO: Generify and honor the timeout
+        final Map<TopicPartition, List<ConsumerRecord<String, String>>> recordsByPartition = new HashMap<>();
+
+        this.readersByStream.entrySet().stream()
+                .forEach(i -> {
+                    log.debug("Reading data for stream {}", i.getKey());
+
+                    String stream = i.getKey();
+                    TopicPartition topicPartition = new TopicPartition(stream, 0);
+
+                    PravegaReader reader = i.getValue();
+
+                    List<ConsumerRecord<String, String>> records = new ArrayList<>();
+
+                    EventRead<String> event = null;
+                    do {
+                        try {
+                            event = reader.readNextEvent();
+                            if (event.getEvent() != null) {
+                                log.debug("Found a non-null event");
+                                records.add(new ConsumerRecord(stream, 0, 0, null, event.getEvent()));
+                            }
+                        } catch (ReinitializationRequiredException e) {
+                            throw e;
+                        }
+                    } while (event.getEvent() != null);
+
+
+                    /*EventRead<String> readEvent = reader.readNextEvent();
+                    while (readEvent != null) {
+                        String readMessage = readEvent.getEvent();
+                        if (readMessage != null) {
+                            records.add(new ConsumerRecord(stream, 0, 0, null, readMessage));
+                        }
+                    }*/
+                    if (!records.isEmpty()) {
+                        // TODO: Handle the case where the partition is already there in the map.
+                        recordsByPartition.put(topicPartition, records);
+                    }
+                });
+        return new ConsumerRecords<String, String>(recordsByPartition);
+
+    }
+
+    private ConsumerRecords invokeInterceptors(List<ConsumerInterceptor<K, V>> interceptors,
+                                               ConsumerRecords consumerRecords) {
+        ConsumerRecords processedRecords = consumerRecords;
+        for (ConsumerInterceptor interceptor : interceptors) {
+            try {
+                processedRecords = interceptor.onConsume(processedRecords);
+            } catch (Exception e) {
+                log.warn("Encountered exception executing interceptor {}.", interceptor.getClass().getCanonicalName(),
+                        e);
+                // ignore
+            }
+        }
+        return processedRecords;
     }
 
     @Override
@@ -253,20 +339,37 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public void close() {
         log.info("Closing the consumer");
+        cleanup();
     }
 
     @Override
     public void close(long timeout, TimeUnit unit) {
         log.info("Closing the consumer with timeout{} and timeunit: {}", timeout, unit);
+        cleanup();
     }
 
     @Override
     public void close(Duration timeout) {
         log.info("Closing the consumer with timeout: {}", timeout);
+        cleanup();
+    }
+
+    private void cleanup() {
+        if (!isClosed.get()) {
+            readersByStream.forEach((k, v) -> v.close());
+            isClosed.set(true);
+        }
     }
 
     @Override
     public void wakeup() {
         log.info("Waking up");
     }
+
+    private void ensureNotClosed() {
+        if (isClosed.get()) {
+            throw new IllegalStateException("This PravegaKafkaConsumer instance is closed already");
+        }
+    }
 }
+

@@ -38,7 +38,6 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final String scope;
 
-
     private final Map<String, PravegaWriter> writersByStream = new HashMap<>();
 
     public PravegaKafkaProducer(Properties kafkaConfigProperties) {

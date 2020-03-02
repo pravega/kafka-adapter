@@ -82,5 +82,5 @@ shadowJar {
     relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
 
     relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
-    relocate 'io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
+    relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
 }
