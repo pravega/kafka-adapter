@@ -1,6 +1,7 @@
-package io.pravega.adapters.kafka.client.producer;
+package io.pravega.adapters.kafka.client;
 
 import io.pravega.adapters.kafka.client.common.ChecksumUtils;
+import io.pravega.adapters.kafka.client.producer.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -103,27 +104,6 @@ public class EmbeddedKafkaClusterUsageExamples {
         RecordMetadata recordMetadata = recordMetadataFuture.get();
 
         System.out.println("Record metadata: " + recordMetadata);
-
-        /*
-        IntegrationTestUtils.produceValuesSynchronously(topic, Arrays.asList("Message-1", "Message-2", "Message-3"),
-                producerConfig, mockTime);
-
-        // Prepare consumer configuration
-        Properties consumerConfig = new Properties();
-        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
-        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, "TestConsumerApp");
-        consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-
-        int numRecords = 3;
-        int waitTime = 40000;
-
-        // Consume records
-        List<KeyValue<String, String>> consumedRecords =
-                IntegrationTestUtils.waitUntilMinKeyValueRecordsReceived(consumerConfig, topic, numRecords, waitTime);
-        assertEquals(numRecords, consumedRecords.size());
-        */
     }
 
     @Test

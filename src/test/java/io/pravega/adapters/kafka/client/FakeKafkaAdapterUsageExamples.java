@@ -1,7 +1,8 @@
-package io.pravega.adapters.kafka.client.producer;
+package io.pravega.adapters.kafka.client;
 
 import io.pravega.adapters.kafka.client.common.ChecksumUtils;
 import io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer;
+import io.pravega.adapters.kafka.client.producer.FakeKafkaProducer;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -23,7 +24,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class FakeKafkaProducerUsageExamples {
+/**
+ * Contains examples demonstrating the use of the fake Kafka producer and consumer implementations of the the
+ * Kafka Adapter.
+ */
+public class FakeKafkaAdapterUsageExamples {
 
     @Test
     public void produceUsesFakeProducer() throws ExecutionException, InterruptedException {
