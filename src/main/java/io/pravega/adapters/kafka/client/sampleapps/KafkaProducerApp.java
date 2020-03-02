@@ -1,10 +1,11 @@
 package io.pravega.adapters.kafka.client.sampleapps;
 
+import java.util.Properties;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-
-import java.util.Properties;
 
 @Slf4j
 public class KafkaProducerApp {
@@ -16,7 +17,7 @@ public class KafkaProducerApp {
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
         KafkaProducer producer = new KafkaProducer(props);
-        ProducerRecord message = new ProducerRecord("testtopic","My Message 1 - sent from program");
+        ProducerRecord message = new ProducerRecord("testtopic", "My Message 1 - sent from program");
         log.info("Sending a producer record message");
         producer.send(message);
         log.info("Done sending message...");

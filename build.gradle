@@ -25,6 +25,19 @@ apply plugin: "maven"
 apply plugin: "java"
 apply plugin: 'maven-publish'
 
+apply plugin: 'checkstyle'
+
+checkstyle {
+    toolVersion '7.8.1'
+    configFile file("src/main/resources/checkstyle.xml")
+}
+checkstyleMain {
+    source ='src/main/java'
+}
+checkstyleTest {
+    source ='src/test/java'
+}
+
 dependencies {
     // Needed to have Lombok work with Gradle 5.x+. See https://github.com/rzwitserloot/lombok/issues/1945. 
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")

@@ -1,9 +1,9 @@
 package io.pravega.adapters.kafka.client.common;
 
-import lombok.NonNull;
-
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
+
+import lombok.NonNull;
 
 public class ChecksumUtils {
 

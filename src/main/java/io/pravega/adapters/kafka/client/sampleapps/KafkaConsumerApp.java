@@ -1,14 +1,15 @@
 package io.pravega.adapters.kafka.client.sampleapps;
 
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.UUID;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.UUID;
 
 @Slf4j
 public class KafkaConsumerApp {
@@ -33,8 +34,7 @@ public class KafkaConsumerApp {
                 }
                 // Business logic
             }
-        }
-        finally {
+        } finally {
             myConsumer.close();
         }
     }

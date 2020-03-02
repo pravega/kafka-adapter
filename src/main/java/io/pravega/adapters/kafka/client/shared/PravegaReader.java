@@ -3,12 +3,17 @@ package io.pravega.adapters.kafka.client.shared;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
-import io.pravega.client.stream.*;
+import io.pravega.client.stream.EventRead;
+import io.pravega.client.stream.EventStreamReader;
+import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.impl.JavaSerializer;
-import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.util.UUID;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class PravegaReader implements AutoCloseable {

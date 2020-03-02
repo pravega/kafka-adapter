@@ -4,11 +4,11 @@ import java.util.Properties;
 
 public class PravegaKafkaConfig {
 
-    static String SCOPE = "pravega.scope";
+    static final String SCOPE = "pravega.scope";
 
-    static String CONTROLLER_URI = "pravega.controller.uri";
+    static final String CONTROLLER_URI = "pravega.controller.uri";
 
-    public static String DEFAULT_SCOPE = "migrated-from-kafka";
+    public static final String DEFAULT_SCOPE = "migrated-from-kafka";
 
     public static String extractEndpoints(Properties props, String defaultValue) {
         String result = props.getProperty(PravegaProducerConfig.CONTROLLER_URI);

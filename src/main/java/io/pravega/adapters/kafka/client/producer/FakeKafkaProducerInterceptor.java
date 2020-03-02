@@ -1,14 +1,13 @@
 package io.pravega.adapters.kafka.client.producer;
 
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
-import java.util.Map;
-
 @Slf4j
-public class FakeKafkaProducerInterceptor<K, V> implements ProducerInterceptor<K,V> {
+public class FakeKafkaProducerInterceptor<K, V> implements ProducerInterceptor<K, V> {
 
     @Override
     public ProducerRecord<K, V> onSend(ProducerRecord<K, V> record) {
