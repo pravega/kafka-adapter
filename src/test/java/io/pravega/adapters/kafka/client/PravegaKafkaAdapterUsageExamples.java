@@ -3,8 +3,8 @@ package io.pravega.adapters.kafka.client;
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
-import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
+import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -50,8 +50,8 @@ public class PravegaKafkaAdapterUsageExamples {
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
         assertNotNull(recordMedata.get());
 
-        try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(producerConfig, null))) {
+        try (PravegaReader<String> reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
+                PravegaKafkaConfig.extractEndpoints(producerConfig, null), new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
         }
     }
@@ -65,8 +65,8 @@ public class PravegaKafkaAdapterUsageExamples {
         String controllerUri = "tcp://localhost:9090";
         String message = "test-message-1";
 
-        producerConfig.put(PravegaProducerConfig.CONTROLLER_URI, controllerUri);
-        producerConfig.put(PravegaProducerConfig.SCOPE, scope);
+        producerConfig.put(PravegaKafkaConfig.CONTROLLER_URI, controllerUri);
+        producerConfig.put(PravegaKafkaConfig.SCOPE, scope);
         producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9090");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -80,7 +80,8 @@ public class PravegaKafkaAdapterUsageExamples {
         assertNotNull(recordMedata.get());
 
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(producerConfig, null))) {
+                PravegaKafkaConfig.extractEndpoints(producerConfig, null),
+                new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
         }
     }
@@ -120,11 +121,9 @@ public class PravegaKafkaAdapterUsageExamples {
         consumer.subscribe(Arrays.asList(topic));
 
         try {
-            while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(1000);
-                for (ConsumerRecord<String, String> record : records) {
-                    System.out.println("Consumed a record containing value: " + record.value());
-                }
+            ConsumerRecords<String, String> records = consumer.poll(1000);
+            for (ConsumerRecord<String, String> record : records) {
+                System.out.println("Consumed a record containing value: " + record.value());
             }
         } finally {
             consumer.close();
@@ -133,7 +132,7 @@ public class PravegaKafkaAdapterUsageExamples {
 
     @Test
     public void testConsumeOnly() {
-        String topic = "tpmkc-0.8241866850521067";
+        String topic = "tpmkc-0.11596792843929993";
         String message = "test-message-1";
         String bootstrapServers = "tcp://localhost:9090";
 
@@ -147,7 +146,7 @@ public class PravegaKafkaAdapterUsageExamples {
 
         // First let's make sure that the event is actually there in the stream.
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(consumerConfig, null))) {
+                PravegaKafkaConfig.extractEndpoints(consumerConfig, null), new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
             System.out.format("Found expected message in in scope/stream %s/%s\n", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);

@@ -6,8 +6,8 @@ import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
 import io.pravega.client.stream.EventWriterConfig;
 import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class PravegaWriter implements AutoCloseable {
+public class PravegaWriter<T> implements AutoCloseable {
 
     private final String scope;
 
@@ -26,9 +26,11 @@ public class PravegaWriter implements AutoCloseable {
 
     private final String controllerUri;
 
+    private final Serializer serializer;
+
     private StreamManager streamManager;
     private EventStreamClientFactory clientFactory;
-    private EventStreamWriter<String> writer;
+    private EventStreamWriter<T> writer;
 
     private boolean isInitialized() {
         return writer != null;
@@ -64,13 +66,11 @@ public class PravegaWriter implements AutoCloseable {
 
         clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
-        writer = clientFactory.createEventWriter(stream,
-                new JavaSerializer<String>(),
-                EventWriterConfig.builder().build());
+        writer = clientFactory.createEventWriter(stream, serializer, EventWriterConfig.builder().build());
         log.debug("Creating a writer for scope/stream {}/{}", scope, stream);
     }
 
-    public CompletableFuture<Void> writeEvent(String event) {
+    public CompletableFuture<Void> writeEvent(T event) {
         if (!isInitialized()) {
             log.info("Not initialized already, initializing");
             this.init();

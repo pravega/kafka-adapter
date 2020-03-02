@@ -13,18 +13,11 @@ repositories {
     mavenCentral()
 }
 
-//task wrapper(type: Wrapper) {
-  //  gradleVersion = '5.2.1'
-//}
-
-// jar.enabled = false
-
 apply plugin: "idea"
 apply plugin: "eclipse"
 apply plugin: "maven"
 apply plugin: "java"
 apply plugin: 'maven-publish'
-
 apply plugin: 'checkstyle'
 
 checkstyle {
@@ -65,18 +58,15 @@ publishing {
             project.shadow.component(publication)
         }
     }
-    /*repositories {
-        maven {
-            url "http://repo.myorg.com"
-        }
-    }*/
 }
 
 test {
+    // We don't want to execute these integrations tests as unit tests. These samples/tests are meant to be run
+    // interactively targeting a separately running deployment. 
     exclude "**/*UsageExamples.class"
 }
 
-// Relocating a Package
+// Relocating Packages using shadow plugin
 shadowJar {
     relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
     relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'

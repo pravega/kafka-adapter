@@ -4,6 +4,7 @@ import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.ReinitializationRequiredException;
+import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -49,6 +50,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
+    private final Serializer serializer;
+
     public PravegaKafkaConsumer(Properties kafkaConfigProperties) {
         consumerConfig = new ConsumerConfig(kafkaConfigProperties);
         interceptors = (List) consumerConfig.getConfiguredInstances(
@@ -56,6 +59,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
         controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
         scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
+        serializer = PravegaKafkaConfig.extractSerializer(kafkaConfigProperties);
     }
 
     @Override
@@ -82,7 +86,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         ensureNotClosed();
 
         for (String topic : topics) {
-            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri);
+            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.serializer);
             readersByStream.putIfAbsent(topic, reader);
         }
     }
@@ -111,13 +115,13 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
         log.info("Polling with timeout {}", timeout);
-        ConsumerRecords<String, String> consumerRecords = read(timeout);
+        ConsumerRecords<K, V> consumerRecords = read(timeout);
         return invokeInterceptors(this.interceptors, consumerRecords);
     }
 
-    private ConsumerRecords<String, String> read(long timeout) {
+    private ConsumerRecords<K, V> read(long timeout) {
         // TODO: Generify and honor the timeout
-        final Map<TopicPartition, List<ConsumerRecord<String, String>>> recordsByPartition = new HashMap<>();
+        final Map<TopicPartition, List<ConsumerRecord<K, V>>> recordsByPartition = new HashMap<>();
 
         this.readersByStream.entrySet().stream()
                 .forEach(i -> {
@@ -128,7 +132,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
                     PravegaReader reader = i.getValue();
 
-                    List<ConsumerRecord<String, String>> records = new ArrayList<>();
+                    List<ConsumerRecord<K, V>> records = new ArrayList<>();
 
                     EventRead<String> event = null;
                     do {
@@ -142,21 +146,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                             throw e;
                         }
                     } while (event.getEvent() != null);
-
-
-                    /*EventRead<String> readEvent = reader.readNextEvent();
-                    while (readEvent != null) {
-                        String readMessage = readEvent.getEvent();
-                        if (readMessage != null) {
-                            records.add(new ConsumerRecord(stream, 0, 0, null, readMessage));
-                        }
-                    }*/
                     if (!records.isEmpty()) {
                         // TODO: Handle the case where the partition is already there in the map.
                         recordsByPartition.put(topicPartition, records);
                     }
                 });
-        return new ConsumerRecords<String, String>(recordsByPartition);
+        return new ConsumerRecords<K, V>(recordsByPartition);
 
     }
 

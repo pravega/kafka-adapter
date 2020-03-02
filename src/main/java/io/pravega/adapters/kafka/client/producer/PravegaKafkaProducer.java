@@ -2,6 +2,7 @@ package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
+import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,11 +41,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final Map<String, PravegaWriter> writersByStream = new HashMap<>();
 
+    private final Serializer serializer;
+
     public PravegaKafkaProducer(Properties kafkaConfigProperties) {
         properties = kafkaConfigProperties;
 
         controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
         scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
+        serializer = PravegaKafkaConfig.extractSerializer(kafkaConfigProperties);
 
         interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
     }
@@ -91,16 +95,16 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
         String stream = record.topic();
-        PravegaWriter writer;
+        PravegaWriter<V> writer;
         if (this.writersByStream.containsKey(stream)) {
             writer = this.writersByStream.get(stream);
 
         } else {
-            writer = new PravegaWriter(scope, stream, controllerUri);
+            writer = new PravegaWriter(scope, stream, controllerUri, serializer);
             this.writersByStream.putIfAbsent(stream, writer);
         }
 
-        final String message = translateToPravegaMessage(record);
+        final V message = translateToPravegaMessage(record);
         return writer.writeEvent(message)
                 .exceptionally(ex -> {
                     log.error("Writing event failed", ex);
@@ -118,9 +122,9 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
                 null, 0, 0);
     }
 
-    private String translateToPravegaMessage(ProducerRecord<K, V> record) {
+    private V translateToPravegaMessage(ProducerRecord<K, V> record) {
         // TODO: Oversimplification right now. What about the key?
-        return (String) record.value();
+        return record.value();
     }
 
     @Override

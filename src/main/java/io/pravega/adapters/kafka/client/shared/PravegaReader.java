@@ -7,8 +7,8 @@ import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.ReaderConfig;
 import io.pravega.client.stream.ReaderGroupConfig;
+import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
-import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.net.URI;
 import java.util.UUID;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Slf4j
-public class PravegaReader implements AutoCloseable {
+public class PravegaReader<T> implements AutoCloseable {
 
     private final String scope;
 
@@ -26,7 +26,9 @@ public class PravegaReader implements AutoCloseable {
 
     private final String controllerUri;
 
-    private EventStreamReader<String> reader;
+    private final Serializer serializer;
+
+    private EventStreamReader<T> reader;
     private ReaderGroupManager readerGroupManager;
 
     private boolean isInitialized() {
@@ -51,23 +53,22 @@ public class PravegaReader implements AutoCloseable {
         readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
 
         reader = EventStreamClientFactory.withScope(scope, clientConfig)
-                .createReader("readerId", readerGroupName,
-                        new JavaSerializer<String>(), ReaderConfig.builder().build());
+                .createReader("readerId", readerGroupName, serializer, ReaderConfig.builder().build());
     }
 
-    public EventRead<String> readNextEvent() {
+    public EventRead<T> readNextEvent() {
         if (!isInitialized()) {
             init();
         }
         return this.reader.readNextEvent(200);
     }
 
-    public String tryReadNext() {
+    public T tryReadNext() {
         if (!isInitialized()) {
             init();
         }
 
-        EventRead<String> event = this.reader.readNextEvent(200);
+        EventRead<T> event = this.reader.readNextEvent(200);
 
         if (event != null) {
             return event.getEvent();
@@ -77,8 +78,8 @@ public class PravegaReader implements AutoCloseable {
         }
     }
 
-    public String readNext() {
-        String result = tryReadNext();
+    public T readNext() {
+        T result = tryReadNext();
         if (result == null) {
             throw new IllegalStateException("No Event");
         }
