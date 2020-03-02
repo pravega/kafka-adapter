@@ -1,6 +1,6 @@
 package io.pravega.adapters.kafka.client.producer;
 
-import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -43,8 +42,8 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     public PravegaKafkaProducer(Properties kafkaConfigProperties) {
         properties = kafkaConfigProperties;
 
-        controllerUri = properties.getProperty(PravegaProducerConfig.CONTROLLER_URI, "localhost:9090");
-        scope = properties.getProperty(PravegaProducerConfig.SCOPE, "migrated_from_kafka");
+        controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
+        scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
 
         interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
     }

@@ -1,5 +1,6 @@
 package io.pravega.adapters.kafka.client.producer;
 
+import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
@@ -8,16 +9,41 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class PravegaKafkaProducerUsageExamples {
+
+    @Test
+    public void usingCustomProducerWithSameProperties() throws ExecutionException, InterruptedException {
+        Properties producerConfig = new Properties();
+
+        String topic = "test-stream";
+        String message = "test-message-1";
+
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"tcp://localhost:9090");
+        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+        Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig);
+
+        ProducerRecord<String, String> producerRecord =
+                new ProducerRecord<>(topic, 1, "test-key", message);
+
+        Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
+        assertNotNull(recordMedata.get());
+
+        try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
+                PravegaKafkaConfig.extractEndpoints(producerConfig, null))) {
+            assertEquals(message, reader.readNext());
+        }
+    }
 
 
     @Test
