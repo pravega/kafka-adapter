@@ -72,6 +72,10 @@ publishing {
     }*/
 }
 
+test {
+    exclude "**/*UsageExamples.class"
+}
+
 // Relocating a Package
 shadowJar {
     relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
