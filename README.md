@@ -1,8 +1,8 @@
 # Kafka Adapter for Pravega
 
-This code is from a proof-of-concept exercise for building a application adapter for migrating existing kafka producer and consumer applications without any material source-code changes. 
+This code is from a proof-of-concept exercise for building an application adapter for migrating existing kafka producer and consumer applications without any material source-code changes. 
 
-This adapter replaces `org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer` implementations with custom implementations that talk to Pravega instead of Kafka. 
+This adapter replaces `org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer` implementations with custom implementations that talk to Pravega instead of Kafka. Kafka producer and consumer applications can be made to talk to Pravega (instead of Kafka), merely by replacing Kafka dependencies in their builds with this adapter, modifying client application configuration, and rebuilding their application.
 
 ## How to Build
 
