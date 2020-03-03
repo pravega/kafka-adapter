@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -105,7 +106,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         }
 
         final V message = translateToPravegaMessage(record);
-        return writer.writeEvent(message)
+        CompletableFuture<RecordMetadata> cf = writer.writeEvent(message)
                 .exceptionally(ex -> {
                     log.error("Writing event failed", ex);
                     return null;
@@ -114,6 +115,18 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
                     log.debug("Done writing event message {} to stream {}", message, stream);
                     return prepareRecordMetadata();
                 });
+
+        cf.handle((rm, t) -> {
+            if (callback != null) {
+                log.debug("Callback is not null, invoking it");
+                Exception exception = t != null ? new Exception(t) : null;
+                callback.onCompletion(rm, exception);
+            } else {
+                log.debug("Callback is null");
+            }
+            return null;
+        });
+        return cf;
     }
 
     private RecordMetadata prepareRecordMetadata() {

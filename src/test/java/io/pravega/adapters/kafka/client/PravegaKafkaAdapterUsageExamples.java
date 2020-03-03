@@ -16,6 +16,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -170,6 +171,34 @@ public class PravegaKafkaAdapterUsageExamples {
         } finally {
             consumer.close();
         }
+    }
+
+    @Test
+    public void testProduceThenConsumeAsynchronously() {
+        String topic = "tpc-" + Math.random();
+        String message = "test-message-1";
+        String bootstrapServers = "tcp://localhost:9090";
+
+        // Produce events
+        Properties producerConfig = new Properties();
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+        Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig);
+
+        ProducerRecord<String, String> producerRecord =
+                new ProducerRecord<>(topic, 1, "test-key", message);
+
+        pravegaKafkaProducer.send(producerRecord, (metadata, exception) -> {
+            if (exception != null) {
+                System.err.println("Encountered an exception: " + exception.getMessage());
+            }
+            System.out.println("Produced record metadata: " + metadata);
+            assertNotNull(metadata);
+        });
+
+        pravegaKafkaProducer.close();
 
     }
 }
