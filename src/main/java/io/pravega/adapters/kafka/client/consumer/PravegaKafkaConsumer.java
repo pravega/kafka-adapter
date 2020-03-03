@@ -93,7 +93,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void assign(Collection<TopicPartition> partitions) {
-        log.info("Assigning partitions: {}", partitions);
+        throw new UnsupportedOperationException("Assigning partitions not supported");
     }
 
     @Override
