@@ -21,7 +21,7 @@ public class KafkaProducerApp {
         log.info("Sending a producer record message");
         producer.send(message);
         log.info("Done sending message...");
-
+        producer.close();
     }
 
 
