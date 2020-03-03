@@ -61,7 +61,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void beginTransaction() throws ProducerFencedException {
-        log.debug("Beginning transaction");
+        log.info("Beginning transaction");
     }
 
     @Override
@@ -73,12 +73,12 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void commitTransaction() throws ProducerFencedException {
-        log.debug("Committing transaction");
+        log.info("Committing transaction");
     }
 
     @Override
     public void abortTransaction() throws ProducerFencedException {
-        log.debug("Aborting transacton");
+        log.info("Aborting transaction");
     }
 
     @Override
@@ -89,7 +89,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
         log.debug("Arguments: record={}, callback={}", record, callback);
-        log.debug("Sending producer record");
+        log.info("Sending producer record");
         ProducerRecord<K, V> interceptedRecord = this.interceptors.onSend(record);
         return doSend(interceptedRecord, callback);
     }
@@ -112,13 +112,13 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
                     return null;
                 })
                 .thenApply(i -> {
-                    log.debug("Done writing event message {} to stream {}", message, stream);
+                    log.info("Done writing event message {} to stream {}", message, stream);
                     return prepareRecordMetadata();
                 });
 
         cf.handle((rm, t) -> {
             if (callback != null) {
-                log.debug("Callback is not null, invoking it");
+                log.info("Callback is not null, invoking it");
                 Exception exception = t != null ? new Exception(t) : null;
                 callback.onCompletion(rm, exception);
             } else {
@@ -143,7 +143,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public void flush() {
         log.debug("Flushing");
-
+        // TODO: Flush all the writers
     }
 
     @Override
