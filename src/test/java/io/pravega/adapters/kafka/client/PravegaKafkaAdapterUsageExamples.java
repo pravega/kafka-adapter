@@ -16,7 +16,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -192,7 +191,7 @@ public class PravegaKafkaAdapterUsageExamples {
 
         pravegaKafkaProducer.send(producerRecord, (metadata, exception) -> {
             if (exception != null) {
-                System.err.println("Encountered an exception: " + exception.getMessage());
+                System.out.println("Encountered an exception: " + exception.getMessage());
             }
             System.out.println("Produced record metadata: " + metadata);
             assertNotNull(metadata);
