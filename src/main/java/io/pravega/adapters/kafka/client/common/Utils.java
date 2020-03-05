@@ -5,7 +5,7 @@ import java.util.zip.Checksum;
 
 import lombok.NonNull;
 
-public class ChecksumUtils {
+public class Utils {
 
     public static long computeCRC32Checksum(@NonNull String message) {
         return computeCRC32Checksum(message.getBytes());
