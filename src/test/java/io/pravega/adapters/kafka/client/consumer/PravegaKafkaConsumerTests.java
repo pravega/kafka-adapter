@@ -64,6 +64,17 @@ public class PravegaKafkaConsumerTests {
         assertSame(reusablePravegaReader, consumer.getReadersByStream().get("topic-2"));
     }
 
+    @Test
+    public void unsubscribingEmptiesSubscriptions() {
+        PravegaKafkaConsumer<String, Object> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        consumer.subscribe(Arrays.asList("topic-1", "topic-2"));
+
+        assertEquals(2, consumer.subscription().size());
+        consumer.unsubscribe();
+        assertEquals(0, consumer.subscription().size());
+    }
+
     private Properties prepareDummyCompleteConsumerConfig() {
         Properties result = new Properties();
         result.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy");

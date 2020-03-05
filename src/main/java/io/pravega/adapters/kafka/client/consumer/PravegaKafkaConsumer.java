@@ -166,8 +166,10 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void unsubscribe() {
-        log.info("Unsubscribing");
-
+        ensureNotClosed();
+        log.debug("Un-subscribing from all topics");
+        readersByStream.forEach((k, v) -> v.close());
+        readersByStream = new HashMap<>();
     }
 
     /**
@@ -178,6 +180,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
+        ensureNotClosed();
         if (timeout < -1) {
             throw new IllegalArgumentException("Specified timeout is a negative value");
         }
@@ -220,6 +223,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      * @return
      */
     private ConsumerRecords<K, V> read(long timeout) {
+        ensureNotClosed();
 
         // TODO: return immediately with values in the buffer if timeout is 0
 
@@ -325,123 +329,123 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void seek(TopicPartition partition, long offset) {
-
+        throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seek(TopicPartition partition, OffsetAndMetadata offsetAndMetadata) {
-
+        throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seekToBeginning(Collection<TopicPartition> partitions) {
-
+        throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seekToEnd(Collection<TopicPartition> partitions) {
-
+        throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public long position(TopicPartition partition) {
-        return 0;
+        return -1;
     }
 
     @Override
     public long position(TopicPartition partition, Duration timeout) {
-        return 0;
+        return -1;
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition, Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions, Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics() {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Set<TopicPartition> paused() {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void pause(Collection<TopicPartition> partitions) {
-
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void resume(Collection<TopicPartition> partitions) {
-
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch,
                                                                    Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions, Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> endOffsets(Collection<TopicPartition> partitions) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> endOffsets(Collection<TopicPartition> partitions, Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
@@ -469,7 +473,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void wakeup() {
-        log.debug("Waking up");
+        throw new UnsupportedOperationException("Not supported");
     }
 
     private void ensureNotClosed() {
