@@ -1,5 +1,6 @@
 package io.pravega.adapters.kafka.client.consumer;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.client.stream.EventRead;
@@ -18,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,6 +55,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final String scope;
 
+    @VisibleForTesting
+    @Getter(AccessLevel.PACKAGE)
     private Map<String, PravegaReader> readersByStream = new HashMap<>();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
@@ -124,13 +129,24 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void subscribe(@NonNull Collection<String> topics, ConsumerRebalanceListener callback) {
-        log.trace("Subscribing to topics: {}, with callback", topics);
+        log.debug("Subscribing to topics: {}, with callback {}", topics, callback);
         ensureNotClosed();
+
+        Map<String, PravegaReader> oldReadersByStream = this.readersByStream;
         readersByStream = new HashMap<>();
         for (String topic : topics) {
-            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer);
-            readersByStream.putIfAbsent(topic, reader);
+            if (!readersByStream.containsKey(topic)) {
+                PravegaReader reader = null;
+                if (oldReadersByStream.containsKey(topic)) {
+                    reader = oldReadersByStream.get(topic);
+                } else {
+                    reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer);
+                }
+                readersByStream.put(topic, reader);
+                oldReadersByStream.remove(topic);
+            }
         }
+        oldReadersByStream.forEach((k, v) -> v.close());
     }
 
     @Override

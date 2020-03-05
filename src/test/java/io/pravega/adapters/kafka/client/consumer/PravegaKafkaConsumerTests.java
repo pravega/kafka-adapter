@@ -1,13 +1,17 @@
 package io.pravega.adapters.kafka.client.consumer;
 
+import io.pravega.adapters.kafka.client.shared.PravegaReader;
+
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Set;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class PravegaKafkaConsumerTests {
@@ -36,7 +40,7 @@ public class PravegaKafkaConsumerTests {
     }
 
     @Test
-    public void subscribeCalledMultipleTimeMakesLatestTopicsEffective() {
+    public void resubscribeMakesLatestTopicsEffective() {
         Consumer<String, Object> consumer = new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
         consumer.subscribe(Arrays.asList("topic-1", "topic-2"));
         consumer.subscribe(Arrays.asList("topic-3", "topic-4"));
@@ -44,6 +48,20 @@ public class PravegaKafkaConsumerTests {
         Set<String> subscribedTopics = consumer.subscription();
         assertTrue(subscribedTopics.contains("topic-3"));
         assertTrue(subscribedTopics.contains("topic-4"));
+    }
+
+    @Test
+    public void resubscribeReusesExistingReaders() {
+        PravegaKafkaConsumer<String, Object> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        consumer.subscribe(Arrays.asList("topic-1", "topic-2"));
+
+        PravegaReader reusablePravegaReader = consumer.getReadersByStream().get("topic-2");
+
+        // Resubscribe with one of existing topics
+        consumer.subscribe(Arrays.asList("topic-2", "topic-3"));
+
+        assertSame(reusablePravegaReader, consumer.getReadersByStream().get("topic-2"));
     }
 
     private Properties prepareDummyCompleteConsumerConfig() {
