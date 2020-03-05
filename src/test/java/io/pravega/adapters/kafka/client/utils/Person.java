@@ -1,8 +1,10 @@
 package io.pravega.adapters.kafka.client.utils;
 
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode
+@ToString
 public class Person {
 
     public Person() {}
