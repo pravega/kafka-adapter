@@ -26,7 +26,7 @@ public class PravegaWriter<T> implements AutoCloseable {
 
     private final String controllerUri;
 
-    private final Serializer serializer;
+    private final Serializer<T> serializer;
 
     private StreamManager streamManager;
     private EventStreamClientFactory clientFactory;
