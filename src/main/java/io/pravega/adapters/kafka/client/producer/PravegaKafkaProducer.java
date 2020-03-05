@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -44,6 +45,11 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     private final Serializer<V> serializer;
 
     public PravegaKafkaProducer(Properties configProperties) {
+        if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
+            throw new IllegalArgumentException(String.format("Property [%s] is not set",
+                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
+        }
+
         properties = configProperties;
         PravegaKafkaConfig config = new PravegaKafkaConfig(properties);
 
