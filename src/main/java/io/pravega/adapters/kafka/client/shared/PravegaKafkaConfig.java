@@ -22,10 +22,14 @@ public class PravegaKafkaConfig {
 
     public static final String DEFAULT_SCOPE = "migrated-from-kafka";
 
-    public final Properties props;
+    private final Properties props;
 
     public String serverEndpoints() {
         return serverEndpoints(null);
+    }
+
+    public void setProperty(String key, String value) {
+        this.props.setProperty(key, value);
     }
 
     public String serverEndpoints(String defaultValue) {

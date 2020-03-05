@@ -52,7 +52,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final String scope;
 
-    private final Map<String, PravegaReader> readersByStream = new HashMap<>();
+    private Map<String, PravegaReader> readersByStream = new HashMap<>();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -62,11 +62,28 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         this(kafkaConfigProperties, null, null);
     }
 
-    public PravegaKafkaConsumer(Properties kafkaConfigProperties,
+    public PravegaKafkaConsumer(Properties configProperties,
                                 Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-        consumerConfig = new ConsumerConfig(kafkaConfigProperties);
 
-        PravegaKafkaConfig config = new PravegaKafkaConfig(kafkaConfigProperties);
+        if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
+            throw new IllegalArgumentException(String.format("Property [%s] is not set",
+                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
+        }
+
+        PravegaKafkaConfig config = new PravegaKafkaConfig(configProperties);
+        if (keyDeserializer != null) {
+            config.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                    keyDeserializer.getClass().getCanonicalName());
+        }
+        if (valueDeserializer != null) {
+            config.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                    valueDeserializer.getClass().getCanonicalName());
+        }
+        if (config.deserializer() == null) {
+            throw new IllegalArgumentException("Value deserializer is not set");
+        }
+
+        consumerConfig = new ConsumerConfig(configProperties);
         controllerUri = config.serverEndpoints();
         scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
         deserializer = config.deserializer();
@@ -74,6 +91,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         interceptors = (List) consumerConfig.getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
     }
+
 
     /**
      * In Pravega manual assignment of segments is not applicable, as segments (or partitions) are not fixed and
@@ -108,13 +126,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     public void subscribe(@NonNull Collection<String> topics, ConsumerRebalanceListener callback) {
         log.trace("Subscribing to topics: {}, with callback", topics);
         ensureNotClosed();
-
-        if (readersByStream.size() > 0) {
-            readersByStream.forEach((k, v) -> {
-                readersByStream.remove(k);
-                v.close();
-            });
-        }
+        readersByStream = new HashMap<>();
         for (String topic : topics) {
             PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer);
             readersByStream.putIfAbsent(topic, reader);
