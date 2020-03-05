@@ -137,7 +137,7 @@ public class CustomSerializationUsageExamples {
     }
 
     /**
-     * Demonstrates workings of a custom serialization/deserialization
+     * Demonstrates workings of a custom serialization/deserialization.
      */
     private static void serializeThenDeserialize() {
         Person person =  new Person("Ravi", "Sharda", "rsharda");
