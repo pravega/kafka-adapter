@@ -42,14 +42,15 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final Map<String, PravegaWriter> writersByStream = new HashMap<>();
 
-    private final Serializer serializer;
+    private final Serializer<V> serializer;
 
-    public PravegaKafkaProducer(Properties kafkaConfigProperties) {
-        properties = kafkaConfigProperties;
+    public PravegaKafkaProducer(Properties configProperties) {
+        properties = configProperties;
+        PravegaKafkaConfig config = new PravegaKafkaConfig(properties);
 
-        controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
-        scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
-        serializer = PravegaKafkaConfig.extractSerializer(kafkaConfigProperties);
+        controllerUri = config.serverEndpoints();
+        scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
+        serializer = config.serializer();
 
         interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
     }

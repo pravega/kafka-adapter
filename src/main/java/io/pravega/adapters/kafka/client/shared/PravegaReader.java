@@ -67,9 +67,7 @@ public class PravegaReader<T> implements AutoCloseable {
         if (!isInitialized()) {
             init();
         }
-
         EventRead<T> event = this.reader.readNextEvent(200);
-
         if (event != null) {
             return event.getEvent();
 

@@ -1,0 +1,45 @@
+package io.pravega.adapters.kafka.client.utils;
+
+import lombok.EqualsAndHashCode;
+
+@EqualsAndHashCode
+public class Person {
+
+    public Person() {}
+
+    public Person(String firstName, String lastName, String userName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.userName = userName;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    private String firstName;
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    private String lastName;
+
+    private String userName;
+}

@@ -34,6 +34,12 @@ import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.record.TimestampType;
+import org.apache.kafka.common.serialization.Deserializer;
+
+import static org.apache.kafka.clients.consumer.ConsumerRecord.NO_TIMESTAMP;
+import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_CHECKSUM;
+import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 
 @Slf4j
 public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
@@ -53,38 +59,62 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     private final Serializer serializer;
 
     public PravegaKafkaConsumer(Properties kafkaConfigProperties) {
+        this(kafkaConfigProperties, null, null);
+    }
+
+    public PravegaKafkaConsumer(Properties kafkaConfigProperties,
+                                Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
         consumerConfig = new ConsumerConfig(kafkaConfigProperties);
+
+        PravegaKafkaConfig config = new PravegaKafkaConfig(kafkaConfigProperties);
+        controllerUri = config.serverEndpoints();
+        scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
+        serializer = config.serializer();
+
         interceptors = (List) consumerConfig.getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
-
-        controllerUri = PravegaKafkaConfig.extractEndpoints(kafkaConfigProperties, null);
-        scope = PravegaKafkaConfig.extractScope(kafkaConfigProperties, PravegaKafkaConfig.DEFAULT_SCOPE);
-        serializer = PravegaKafkaConfig.extractSerializer(kafkaConfigProperties);
     }
 
+    /**
+     * In Pravega manual assignment of segments is not applicable, as segments (or partitions) are not fixed and
+     * can scale dynamically.
+     *
+     * @throws UnsupportedOperationException If invoked
+     */
     @Override
     public Set<TopicPartition> assignment() {
-        log.info("Entered assignment");
-        return null;
+        throw new UnsupportedOperationException(
+                "Manually assigning list of partitions to this serialization is not supported");
     }
 
+    /**
+     * Fetches the topics/segments that the serialization is subscribed to.
+     *
+     * @return The set of segments that this serialization is subscribed to
+     */
     @Override
     public Set<String> subscription() {
-        log.info("Entered subscription");
-        return null;
+        log.trace("Returning subscriptions");
+        return this.readersByStream.keySet();
     }
 
     @Override
     public void subscribe(Collection<String> topics) {
         subscribe(topics, null);
-
     }
+
 
     @Override
     public void subscribe(@NonNull Collection<String> topics, ConsumerRebalanceListener callback) {
-        log.info("Subscribing to topics: {}, with callback", topics);
+        log.trace("Subscribing to topics: {}, with callback", topics);
         ensureNotClosed();
 
+        if (readersByStream.size() > 0) {
+            readersByStream.forEach((k, v) -> {
+                readersByStream.remove(k);
+                v.close();
+            });
+        }
         for (String topic : topics) {
             PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.serializer);
             readersByStream.putIfAbsent(topic, reader);
@@ -112,15 +142,61 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     }
 
+    /**
+     * Returns a map of records by topic/stream.
+     *
+     * @param timeout
+     * @return
+     */
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
+        if (timeout < -1) {
+            throw new IllegalArgumentException("Specified timeout is a negative value");
+        }
+
+        if (!isSubscribedToAnyTopic()) {
+            throw new IllegalStateException("This serialization is not subscribed to any topics/Pravega streams");
+        }
+
+        // TODO: Implement the poll business logic
+        // Here's are the key salient points on implementation:
+        // - On each poll, serialization should return the records (representing) since last read position in the
+        // segments.
+        // In Kafka, the last read position/offset is set either manually (through a seek() call) or automatically
+        // based on a auto commit configuration. In Pravega too it can be set manually or automatically (by default).
+        // For now, we'll not set the offsets manually.
+        //
+        // - Timeouts:
+        //      - If 0, return immediately with whatever records that are in the buffer.
+        //      - Throw exception if negative.
+        //
+        // - Exceptions
+        //      - WakeupException - if wakeup() is called before or during invocation
+        //      - InterruptException - if the calling thread is interrupted is called before or during invocation
+        //      - AuthenticationException - If authentication fails.
+        //      - AuthorizationException - if caller doesnot have access to the stream segments
+        //
+        //
         log.info("Polling with timeout {}", timeout);
         ConsumerRecords<K, V> consumerRecords = read(timeout);
         return invokeInterceptors(this.interceptors, consumerRecords);
     }
 
+    private boolean isSubscribedToAnyTopic() {
+        return this.readersByStream.size() > 0;
+    }
+
+    /**
+     *
+     * @param timeout
+     * @return
+     */
     private ConsumerRecords<K, V> read(long timeout) {
-        // TODO: Generify and honor the timeout
+
+
+        // TODO: return immediately with values in the buffer if timeout is 0
+
+        // TODO: Honor the timeout
         final Map<TopicPartition, List<ConsumerRecord<K, V>>> recordsByPartition = new HashMap<>();
 
         this.readersByStream.entrySet().stream()
@@ -129,18 +205,16 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
                     String stream = i.getKey();
                     TopicPartition topicPartition = new TopicPartition(stream, 0);
-
                     PravegaReader reader = i.getValue();
 
                     List<ConsumerRecord<K, V>> records = new ArrayList<>();
-
                     EventRead<String> event = null;
                     do {
                         try {
                             event = reader.readNextEvent();
                             if (event.getEvent() != null) {
                                 log.debug("Found a non-null event");
-                                records.add(new ConsumerRecord(stream, 0, 0, null, event.getEvent()));
+                                records.add(translateToConsumerRecord(stream, event));
                             }
                         } catch (ReinitializationRequiredException e) {
                             throw e;
@@ -152,6 +226,17 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     }
                 });
         return new ConsumerRecords<K, V>(recordsByPartition);
+
+    }
+
+    private ConsumerRecord translateToConsumerRecord(String stream, EventRead<String> event) {
+        int partition = 0;
+
+        // Refers to the offset that points to the record in a partition
+        int offset = 0;
+
+        return new ConsumerRecord(stream, partition, offset, NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE,
+                NULL_CHECKSUM, NULL_SIZE, NULL_SIZE, null, event.getEvent());
 
     }
 
@@ -177,37 +262,37 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void commitSync() {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitSync(Duration timeout) {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets) {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets, Duration timeout) {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitAsync() {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitAsync(OffsetCommitCallback callback) {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
     public void commitAsync(Map<TopicPartition, OffsetAndMetadata> offsets, OffsetCommitCallback callback) {
-
+        // Pravega always "commits", nothing special to do.
     }
 
     @Override
@@ -333,19 +418,19 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void close() {
-        log.info("Closing the consumer");
+        log.info("Closing the serialization");
         cleanup();
     }
 
     @Override
     public void close(long timeout, TimeUnit unit) {
-        log.info("Closing the consumer with timeout{} and timeunit: {}", timeout, unit);
+        log.info("Closing the serialization with timeout{} and timeunit: {}", timeout, unit);
         cleanup();
     }
 
     @Override
     public void close(Duration timeout) {
-        log.info("Closing the consumer with timeout: {}", timeout);
+        log.info("Closing the serialization with timeout: {}", timeout);
         cleanup();
     }
 

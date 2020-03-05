@@ -51,7 +51,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         if (isScopeCreated) {
             log.info("Created scope {}", scope);
         } else {
-            log.debug("Scope {} was already created previously {}", scope);
+            log.debug("Scope {} was already created previously", scope);
         }
 
         boolean isStreamCreated = streamManager.createStream(scope, stream, StreamConfiguration.builder()
@@ -67,7 +67,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
         writer = clientFactory.createEventWriter(stream, serializer, EventWriterConfig.builder().build());
-        log.debug("Creating a writer for scope/stream {}/{}", scope, stream);
+        log.debug("Creating a writer for scope/stream: {}/{}", scope, stream);
     }
 
     public CompletableFuture<Void> writeEvent(T event) {
