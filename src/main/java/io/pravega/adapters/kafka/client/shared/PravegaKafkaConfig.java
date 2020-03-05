@@ -92,15 +92,17 @@ public class PravegaKafkaConfig {
 
         // TODO: Support multiple producer interceptors?
         String producerInterceptorClass = props.getProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
-        try {
-            ProducerInterceptor<K, V> interceptor =
-                    (ProducerInterceptor) Class.forName(producerInterceptorClass).newInstance();
-            ic.add(interceptor);
-            log.debug("Adding interceptor [{}] to the producer interceptor list", interceptor);
-            interceptors = new ProducerInterceptors<K, V>(ic);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            log.error("Unable to instantiate producer interceptor with name [{}]", producerInterceptorClass, e);
-            throw new IllegalStateException(e);
+        if (producerInterceptorClass != null) {
+            try {
+                ProducerInterceptor<K, V> interceptor =
+                        (ProducerInterceptor) Class.forName(producerInterceptorClass).newInstance();
+                ic.add(interceptor);
+                log.debug("Adding interceptor [{}] to the producer interceptor list", interceptor);
+                interceptors = new ProducerInterceptors<K, V>(ic);
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                log.error("Unable to instantiate producer interceptor with name [{}]", producerInterceptorClass, e);
+                throw new IllegalStateException(e);
+            }
         }
     }
 
