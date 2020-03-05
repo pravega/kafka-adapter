@@ -56,8 +56,8 @@ public class PravegaKafkaConfig {
                 try {
                     return (Serializer) Class.forName(serializerName).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    throw new IllegalStateException("Unable to instantiate serilizer with name [" +
-                            serializerName + "]");
+                    log.error("Unable to instantiate serializer with name [{}]", serializerName, e);
+                    throw new IllegalStateException("e");
                 }
             }
         } else {
