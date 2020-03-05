@@ -1,4 +1,4 @@
-package io.pravega.adapters.kafka.client;
+package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Contains examples demonstrating the use of Kafka producer and consumer implementations of the the Kafka Adapter.
+ * Contains examples demonstrating the use of Kafka producer and serialization implementations of the the Kafka Adapter.
  */
 public class PravegaKafkaAdapterUsageExamples {
 
@@ -51,7 +51,7 @@ public class PravegaKafkaAdapterUsageExamples {
         assertNotNull(recordMedata.get());
 
         try (PravegaReader<String> reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(producerConfig, null), new JavaSerializer<String>())) {
+                new PravegaKafkaConfig(producerConfig).serverEndpoints(), new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
         }
     }
@@ -80,7 +80,7 @@ public class PravegaKafkaAdapterUsageExamples {
         assertNotNull(recordMedata.get());
 
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(producerConfig, null),
+                new PravegaKafkaConfig(producerConfig).serverEndpoints(),
                 new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
         }
@@ -146,7 +146,7 @@ public class PravegaKafkaAdapterUsageExamples {
 
         // First let's make sure that the event is actually there in the stream.
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                PravegaKafkaConfig.extractEndpoints(consumerConfig, null), new JavaSerializer<String>())) {
+                new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
             System.out.format("Found expected message in in scope/stream %s/%s\n", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);

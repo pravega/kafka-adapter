@@ -63,7 +63,7 @@ publishing {
 test {
     // We don't want to execute these integrations tests as unit tests. These samples/tests are meant to be run
     // interactively targeting a separately running deployment. 
-    exclude "**/*UsageExamples.class"
+    exclude "io/pravega/adapters/kafka/client/integrationtests/**"
 }
 
 // Relocating Packages using shadow plugin

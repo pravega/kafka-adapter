@@ -1,6 +1,6 @@
-package io.pravega.adapters.kafka.client;
+package io.pravega.adapters.kafka.client.integrationtests;
 
-import io.pravega.adapters.kafka.client.common.ChecksumUtils;
+import io.pravega.adapters.kafka.client.common.Utils;
 import io.pravega.adapters.kafka.client.consumer.FakeKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.FakeKafkaProducer;
 
@@ -25,7 +25,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Contains examples demonstrating the use of the fake Kafka producer and consumer implementations of the the
+ * Contains examples demonstrating the use of the fake Kafka producer and serialization implementations of the the
  * Kafka Adapter.
  */
 public class FakeKafkaAdapterUsageExamples {
@@ -45,7 +45,7 @@ public class FakeKafkaAdapterUsageExamples {
                 new ProducerRecord<>("test-topic", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedata = fakeKafkaProducer.send(producerRecord);
-        assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()), recordMedata.get().checksum());
+        assertEquals(Utils.computeCRC32Checksum(producerRecord.toString()), recordMedata.get().checksum());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class FakeKafkaAdapterUsageExamples {
                 new ProducerRecord<>("test-topic", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedata = fakeKafkaProducer.send(producerRecord);
-        assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()), recordMedata.get().checksum());
+        assertEquals(Utils.computeCRC32Checksum(producerRecord.toString()), recordMedata.get().checksum());
     }
 
     @Test

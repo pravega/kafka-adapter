@@ -1,6 +1,6 @@
-package io.pravega.adapters.kafka.client;
+package io.pravega.adapters.kafka.client.integrationtests;
 
-import io.pravega.adapters.kafka.client.common.ChecksumUtils;
+import io.pravega.adapters.kafka.client.common.Utils;
 import io.pravega.adapters.kafka.client.producer.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +62,7 @@ public class EmbeddedKafkaClusterUsageExamples {
         IntegrationTestUtils.produceValuesSynchronously(topic, Arrays.asList("Message-1", "Message-2", "Message-3"),
                 producerConfig, mockTime);
 
-        // Prepare consumer configuration
+        // Prepare serialization configuration
         Properties consumerConfig = new Properties();
         consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_CLUSTER.bootstrapServers());
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, "TestConsumerApp");
@@ -122,7 +122,7 @@ public class EmbeddedKafkaClusterUsageExamples {
                 new ProducerRecord<>("test.topic.1", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
-        assertEquals(ChecksumUtils.computeCRC32Checksum(producerRecord.toString()),
+        assertEquals(Utils.computeCRC32Checksum(producerRecord.toString()),
                 recordMedataFuture.get().checksum());
     }
 
