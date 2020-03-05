@@ -56,7 +56,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
-    private final Serializer serializer;
+    private final Serializer deserializer;
 
     public PravegaKafkaConsumer(Properties kafkaConfigProperties) {
         this(kafkaConfigProperties, null, null);
@@ -69,7 +69,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         PravegaKafkaConfig config = new PravegaKafkaConfig(kafkaConfigProperties);
         controllerUri = config.serverEndpoints();
         scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
-        serializer = config.serializer();
+        deserializer = config.deserializer();
 
         interceptors = (List) consumerConfig.getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
@@ -116,7 +116,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
             });
         }
         for (String topic : topics) {
-            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.serializer);
+            PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer);
             readersByStream.putIfAbsent(topic, reader);
         }
     }
@@ -193,7 +193,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     private ConsumerRecords<K, V> read(long timeout) {
 
-
         // TODO: return immediately with values in the buffer if timeout is 0
 
         // TODO: Honor the timeout
@@ -201,14 +200,15 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
         this.readersByStream.entrySet().stream()
                 .forEach(i -> {
-                    log.debug("Reading data for stream {}", i.getKey());
-
                     String stream = i.getKey();
+                    log.debug("Reading data for topic/stream [{}/{}]", scope, i.getKey());
+
+                    // TODO: Should we return 0?
                     TopicPartition topicPartition = new TopicPartition(stream, 0);
                     PravegaReader reader = i.getValue();
 
                     List<ConsumerRecord<K, V>> records = new ArrayList<>();
-                    EventRead<String> event = null;
+                    EventRead<V> event = null;
                     do {
                         try {
                             event = reader.readNextEvent();
@@ -229,7 +229,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     }
 
-    private ConsumerRecord translateToConsumerRecord(String stream, EventRead<String> event) {
+    private ConsumerRecord<K, V> translateToConsumerRecord(String stream, EventRead<V> event) {
         int partition = 0;
 
         // Refers to the offset that points to the record in a partition
@@ -418,23 +418,21 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void close() {
-        log.info("Closing the serialization");
         cleanup();
     }
 
     @Override
     public void close(long timeout, TimeUnit unit) {
-        log.info("Closing the serialization with timeout{} and timeunit: {}", timeout, unit);
         cleanup();
     }
 
     @Override
     public void close(Duration timeout) {
-        log.info("Closing the serialization with timeout: {}", timeout);
         cleanup();
     }
 
     private void cleanup() {
+        log.debug("Closing the consumer");
         if (!isClosed.get()) {
             readersByStream.forEach((k, v) -> v.close());
             isClosed.set(true);
@@ -443,7 +441,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void wakeup() {
-        log.info("Waking up");
+        log.debug("Waking up");
     }
 
     private void ensureNotClosed() {

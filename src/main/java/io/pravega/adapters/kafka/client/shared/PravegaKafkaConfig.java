@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PravegaKafkaConfig {
 
     public static final String VALUE_SERIALIZER = "value.serializer";
+    public static final String VALUE_DESERIALIZER = "value.deserializer";
 
     public static final String SCOPE = "pravega.scope";
 
@@ -47,16 +48,17 @@ public class PravegaKafkaConfig {
         return props.getProperty(PravegaKafkaConfig.SCOPE, defaultValue);
     }
 
-    public Serializer serializer() {
-        String serializerName = props.getProperty(VALUE_SERIALIZER);
-        if (serializerName != null) {
-            if (serializerName.equals("org.apache.kafka.common.serialization.StringSerializer")) {
+    private Serializer loadSerde(String key) {
+        String serde = props.getProperty(key);
+        if (serde != null) {
+            if (serde.equals("org.apache.kafka.common.serialization.StringSerializer") ||
+            serde.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
                 return new JavaSerializer<String>();
             } else {
                 try {
-                    return (Serializer) Class.forName(serializerName).newInstance();
+                    return (Serializer) Class.forName(serde).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    log.error("Unable to instantiate serializer with name [{}]", serializerName, e);
+                    log.error("Unable to instantiate serializer with name [{}]", serde, e);
                     throw new IllegalStateException("e");
                 }
             }
@@ -64,6 +66,14 @@ public class PravegaKafkaConfig {
             // The default serializer
             return new JavaSerializer<String>();
         }
+    }
+
+    public Serializer deserializer() {
+        return loadSerde(VALUE_DESERIALIZER);
+    }
+
+    public Serializer serializer() {
+        return loadSerde(VALUE_SERIALIZER);
     }
 
 

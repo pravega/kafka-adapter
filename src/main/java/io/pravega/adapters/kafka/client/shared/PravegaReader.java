@@ -43,6 +43,7 @@ public class PravegaReader<T> implements AutoCloseable {
                 .controllerURI(URI.create(controllerUri))
                 .build();
 
+        //TODO: Use user provided rgName
         String readerGroupName = UUID.randomUUID().toString().replace("-", "");
         ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(scope, stream))
@@ -52,6 +53,7 @@ public class PravegaReader<T> implements AutoCloseable {
         readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
         readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
 
+        // TODO: Use user-provider reader id
         reader = EventStreamClientFactory.withScope(scope, clientConfig)
                 .createReader("readerId", readerGroupName, serializer, ReaderConfig.builder().build());
     }
