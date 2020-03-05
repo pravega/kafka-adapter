@@ -2,9 +2,16 @@ package io.pravega.adapters.kafka.client.shared;
 
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.impl.JavaSerializer;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerInterceptor;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerInterceptor;
+import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
 
 /**
  * Pravega-specific constants for adapter apps.
@@ -63,7 +70,7 @@ public class PravegaKafkaConfig {
                     return (Serializer) Class.forName(serde).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     log.error("Unable to instantiate serializer with name [{}]", serde, e);
-                    throw new IllegalStateException("e");
+                    throw new IllegalStateException(e);
                 }
             }
         } else {
@@ -80,29 +87,25 @@ public class PravegaKafkaConfig {
         return loadSerde(VALUE_SERIALIZER);
     }
 
+    public <K, V> void populateProducerInterceptors(ProducerInterceptors<K, V> interceptors) {
+        List<ProducerInterceptor<K, V>> ic = new ArrayList<ProducerInterceptor<K, V>>();
 
-    /*public static <T> T instantiate(String name, Class<T> cls) throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException {
-        return (T) Class.forName(name).newInstance();
+        // TODO: Support multiple producer interceptors?
+        String producerInterceptorClass = props.getProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
+        try {
+            ProducerInterceptor<K, V> interceptor =
+                    (ProducerInterceptor) Class.forName(producerInterceptorClass).newInstance();
+            ic.add(interceptor);
+            log.debug("Adding interceptor [{}] to the producer interceptor list", interceptor);
+            interceptors = new ProducerInterceptors<K, V>(ic);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            log.error("Unable to instantiate producer interceptor with name [{}]", producerInterceptorClass, e);
+            throw new IllegalStateException(e);
+        }
     }
 
-    public static Serializer<T> extractSerializer(Properties props, Class<T> cls) {
-        String serializerName = props.getProperty(VALUE_SERIALIZER);
-        if (serializerName == null) {
-            // The default serializer
-            return new JavaSerializer<String>();
-        }
-
-        if (serializerName.equals("org.apache.kafka.common.serialization.StringSerializer")) {
-            return new JavaSerializer<String>();
-        } else {
-            try {
-                // return (Serializer)Class.forName(serializerName).newInstance();
-                return instantiate(serializerName, T);
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new IllegalStateException("Unable to instantiate serilizer with name [" +
-                        serializerName + "]");
-            }
-        }
-    }*/
+    public List<ConsumerInterceptor> consumerInterceptors() {
+        // TODO: Implement
+        return new ArrayList<>();
+    }
 }

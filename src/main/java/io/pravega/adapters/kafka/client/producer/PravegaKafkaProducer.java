@@ -6,7 +6,6 @@ import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,8 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
         serializer = config.serializer();
 
-        interceptors = new ProducerInterceptors<>(Arrays.asList(new FakeKafkaProducerInterceptor<>()));
+        interceptors = new ProducerInterceptors<K, V>(new ArrayList<>());
+        config.populateProducerInterceptors(interceptors);
     }
 
     @Override
