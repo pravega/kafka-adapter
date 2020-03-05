@@ -29,8 +29,8 @@ public class CustomSerializationUsageExamples {
 
         producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
         producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "PersonSerializer");
-        producerConfig.put("pravega.scope", "test-scope");
+        producerConfig.put("value.serializer", "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+        producerConfig.put("pravega.scope", "CustomSerializationUsageExamples");
 
         Producer<String, Person> producer = new PravegaKafkaProducer<>(producerConfig);
         ProducerRecord<String, Person> producerRecord =
