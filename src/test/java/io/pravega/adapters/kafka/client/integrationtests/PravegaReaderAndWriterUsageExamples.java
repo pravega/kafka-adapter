@@ -3,9 +3,8 @@ package io.pravega.adapters.kafka.client.integrationtests;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import io.pravega.client.stream.impl.JavaSerializer;
-import org.junit.Test;
-
 import java.util.UUID;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
