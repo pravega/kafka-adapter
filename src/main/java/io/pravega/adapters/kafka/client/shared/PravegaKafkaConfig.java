@@ -1,5 +1,6 @@
 package io.pravega.adapters.kafka.client.shared;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.impl.JavaSerializer;
 
@@ -87,6 +88,7 @@ public class PravegaKafkaConfig {
         return loadSerde(VALUE_SERIALIZER);
     }
 
+    @SuppressFBWarnings(value = "IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN", justification = "No choice here")
     public <K, V> void populateProducerInterceptors(ProducerInterceptors<K, V> interceptors) {
         List<ProducerInterceptor<K, V>> ic = new ArrayList<ProducerInterceptor<K, V>>();
 

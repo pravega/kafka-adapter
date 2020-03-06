@@ -148,7 +148,7 @@ public class PravegaKafkaAdapterUsageExamples {
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
                 new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>())) {
             assertEquals(message, reader.readNext());
-            System.out.format("Found expected message in in scope/stream %s/%s\n", PravegaKafkaConfig.DEFAULT_SCOPE,
+            System.out.format("Found expected message in in scope/stream %s/%s%n", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);
         }
 
@@ -157,16 +157,14 @@ public class PravegaKafkaAdapterUsageExamples {
         consumer.subscribe(Arrays.asList(topic));
 
         try {
-            //while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(1000);
-                if (records == null) {
-                    System.out.println("Found no records in the current poll");
-                }
-
+            ConsumerRecords<String, String> records = consumer.poll(1000);
+            if (records == null) {
+                System.out.println("Found no records in the current poll");
+            } else {
                 for (ConsumerRecord<String, String> record : records) {
                     System.out.println("Consumed a record containing value: " + record.value());
                 }
-            //}
+            }
         } finally {
             consumer.close();
         }
