@@ -16,7 +16,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@RequiredArgsConstructor
 @Slf4j
 public class PravegaReader<T> implements AutoCloseable {
 
@@ -28,8 +27,25 @@ public class PravegaReader<T> implements AutoCloseable {
 
     private final Serializer serializer;
 
+    private final String readerGroupName;
+    private final String readerId;
+
     private EventStreamReader<T> reader;
     private ReaderGroupManager readerGroupManager;
+
+    public PravegaReader(String scope, String stream, String controllerUri, Serializer serializer) {
+        this(scope, stream, controllerUri, serializer, UUID.randomUUID().toString(), "readerId");
+    }
+
+    public PravegaReader(String scope, String stream, String controllerUri, Serializer serializer,
+                         String readerGroupName, String readerId) {
+        this.scope = scope;
+        this.stream = stream;
+        this.controllerUri = controllerUri;
+        this.serializer = serializer;
+        this.readerGroupName = readerGroupName;
+        this.readerId = readerId;
+    }
 
     private boolean isInitialized() {
         return reader != null;
@@ -43,8 +59,6 @@ public class PravegaReader<T> implements AutoCloseable {
                 .controllerURI(URI.create(controllerUri))
                 .build();
 
-        //TODO: Use user provided rgName
-        String readerGroupName = UUID.randomUUID().toString().replace("-", "");
         ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
                 .stream(Stream.of(scope, stream))
                 .disableAutomaticCheckpoints()
@@ -55,7 +69,7 @@ public class PravegaReader<T> implements AutoCloseable {
 
         // TODO: Use user-provider reader id
         reader = EventStreamClientFactory.withScope(scope, clientConfig)
-                .createReader("readerId", readerGroupName, serializer, ReaderConfig.builder().build());
+                .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
     }
 
     public EventRead<T> readNextEvent() {
