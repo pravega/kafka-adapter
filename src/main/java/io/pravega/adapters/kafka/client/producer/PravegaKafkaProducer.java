@@ -149,7 +149,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public void flush() {
         log.debug("Flushing");
-        // TODO: Flush all the writers
+        this.writersByStream.values().stream().forEach(i -> i.flush());
     }
 
     @Override
