@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Contains examples demonstrating the use of Kafka producer and serialization implementations of the the Kafka Adapter.
@@ -241,9 +242,68 @@ public class PravegaKafkaAdapterUsageExamples {
                 String readPerson = record.value();
                 System.out.println("Consumed a record containing value: " + readPerson);
             }
+            assertEquals(20, records.count());
         } finally {
             consumer.close();
         }
+    }
 
+    @Test
+    public void testReceivesPartialSetOfWhenTimeoutExceedsTimeToFetchAll() {
+        String scopeName = "multiple-messages";
+
+        Properties producerConfig = new Properties();
+        String topicName = "test-topic-" + Math.random();
+        String controllerUri = "tcp://localhost:9090";
+
+        producerConfig.put("bootstrap.servers", controllerUri);
+        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("pravega.scope", scopeName);
+
+        try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
+            for (int i = 0; i < 50; i++) {
+                ProducerRecord<String, String> producerRecord =
+                        new ProducerRecord<>(topicName, 1, "test-key", "message-" + i);
+
+                // Sending asynchronously
+                producer.send(producerRecord);
+            }
+            producer.flush();
+        }
+
+        int actualCountOfItemsInStream = 0;
+        // Finding out how many were really written
+        try (PravegaReader reader = new PravegaReader(scopeName, topicName, controllerUri, new JavaSerializer<String>(),
+                "some-reader-group" + Math.random(), "some-reader-id")) {
+            while (reader.readNextEvent().getEvent() != null) {
+                actualCountOfItemsInStream++;
+            }
+        }
+        System.out.println("Actual no. of items in stream = " + actualCountOfItemsInStream);
+
+        // Consume events
+        Properties consumerConfig = new Properties();
+        consumerConfig.put("bootstrap.servers", controllerUri);
+        consumerConfig.put("group.id", UUID.randomUUID().toString());
+        consumerConfig.put("client.id", "your_client_id");
+        consumerConfig.put("auto.offset.reset", "earliest");
+        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("pravega.scope", scopeName);
+
+        Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig);
+        consumer.subscribe(Arrays.asList(topicName));
+
+        try {
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
+            for (ConsumerRecord<String, String> record : records) {
+                String readPerson = record.value();
+                System.out.println("Consumed a record containing value: " + readPerson);
+            }
+            assertTrue(records.count() < actualCountOfItemsInStream);
+        } finally {
+            consumer.close();
+        }
     }
 }
