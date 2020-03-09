@@ -60,8 +60,8 @@ public class AdapterUsageAdvancedExamples {
         try {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
             for (ConsumerRecord<String, String> record : records) {
-                String readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
+                String readMessage = record.value();
+                System.out.println("Consumed a record containing value: " + readMessage);
             }
             assertEquals(20, records.count());
         } finally {
@@ -70,7 +70,7 @@ public class AdapterUsageAdvancedExamples {
     }
 
     @Test
-    public void testReceivesPartialSetOfWhenTimeoutExceedsTimeToFetchAll() {
+    public void testReceivesPartialSetOfMessagesUponTimeout() {
         String scopeName = "multiple-messages";
 
         String topicName = "test-topic-" + Math.random();
@@ -119,8 +119,8 @@ public class AdapterUsageAdvancedExamples {
         try {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
             for (ConsumerRecord<String, String> record : records) {
-                String readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
+                String readMessage = record.value();
+                System.out.println("Consumed a record containing value: " + readMessage);
             }
             assertTrue(records.count() < actualCountOfItemsInStream);
         } finally {
@@ -130,8 +130,8 @@ public class AdapterUsageAdvancedExamples {
 
     @Test
     public void testReceivesIncrementalMessagesOnPoll() {
-        String scopeName = "multiple-messages";
-        String topicName = "test-topic-" + Math.random();
+        String scopeName = "incremental-polls-" + Math.random();
+        String topicName = "test-topic-";
         String controllerUri = "tcp://localhost:9090";
 
         Properties producerConfig = new Properties();
@@ -141,7 +141,7 @@ public class AdapterUsageAdvancedExamples {
         producerConfig.put("pravega.scope", scopeName);
 
         try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 200; i++) {
                 ProducerRecord<String, String> producerRecord =
                         new ProducerRecord<>(topicName, 1, "test-key", "message-" + i);
 
@@ -150,16 +150,6 @@ public class AdapterUsageAdvancedExamples {
             }
             producer.flush();
         }
-
-        int actualCountOfItemsInStream = 0;
-        // Finding out how many were really written
-        try (PravegaReader reader = new PravegaReader(scopeName, topicName, controllerUri, new JavaSerializer<String>(),
-                "some-reader-group" + Math.random(), "some-reader-id")) {
-            while (reader.readNextEvent().getEvent() != null) {
-                actualCountOfItemsInStream++;
-            }
-        }
-        System.out.println("Actual no. of items in stream = " + actualCountOfItemsInStream);
 
         // Consume events
         Properties consumerConfig = new Properties();
@@ -174,15 +164,41 @@ public class AdapterUsageAdvancedExamples {
         Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig);
         consumer.subscribe(Arrays.asList(topicName));
 
+        // Inspect the output to check if the behavior is as expected. You should see something like below in the
+        // console output. Poll 3 starts from where poll 2 left. And, poll 2 starts from where poll 1 left.
+        //
+        //   Poll 1 - record: message-0
+        //   ...
+        //   Poll 2 - record: message-189
+        //   Poll 3 - record: message-190
+        //   ...
+        //
         try {
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
-            for (ConsumerRecord<String, String> record : records) {
-                String readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
+            ConsumerRecords<String, String> recordSet1 = consumer.poll(Duration.ofMillis(200));
+            ConsumerRecords<String, String> recordSet2 = consumer.poll(Duration.ofMillis(50));
+            ConsumerRecords<String, String> recordSet3 = consumer.poll(Duration.ofMillis(200));
+
+            for (ConsumerRecord<String, String> record : recordSet1) {
+                System.out.println("Poll 1 - record: " + record.value());
             }
-            assertTrue(records.count() < actualCountOfItemsInStream);
+
+            for (ConsumerRecord<String, String> record : recordSet2) {
+                System.out.println("Poll 2 - record: " + record.value());
+            }
+
+            if (recordSet3 == null || recordSet3.isEmpty()) {
+                System.out.println("No data found in record set 3");
+            }
+            for (ConsumerRecord<String, String> record : recordSet3) {
+                System.out.println("Poll 3 - record: " + record.value());
+            }
         } finally {
             consumer.close();
         }
+    }
+
+    @Test
+    public void testReceivesMessagesFromMulltipleTopics() {
+
     }
 }
