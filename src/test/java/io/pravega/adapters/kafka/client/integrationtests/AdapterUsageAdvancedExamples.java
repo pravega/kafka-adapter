@@ -207,7 +207,93 @@ public class AdapterUsageAdvancedExamples {
     }
 
     @Test
-    public void testReceivesMessagesFromMulltipleTopics() {
+    public void testReceivesIncrementalMessagesOnPollFromDifferentConsumersHavingSameName() {
+        String scope = "incremental-polls-" + Math.random();
+        String topic = "test-topic-";
+        String controllerUri = "tcp://localhost:9090";
+        String consumerGroupId = "test-cg";
+        String clientId = "test-cid";
 
+        Properties producerConfig = new Properties();
+        producerConfig.put("bootstrap.servers", controllerUri);
+        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("pravega.scope", scope);
+
+        try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
+            for (int i = 0; i < 200; i++) {
+                ProducerRecord<String, String> producerRecord =
+                        new ProducerRecord<>(topic, 1, "test-key", "message-" + i);
+
+                // Sending asynchronously
+                producer.send(producerRecord);
+            }
+            producer.flush();
+        }
+
+        // Consume events
+        Properties consumerConfig = prepareConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
+
+        // Inspect the output to check if the behavior is as expected. You should see something like below in the
+        // console output. Poll 3 starts from where poll 2 left. And, poll 2 starts from where poll 1 left.
+        //
+        //   Poll 1 - record: message-0
+        //   ...
+        //   Poll 2 - record: message-189
+        //   Poll 3 - record: message-190
+        //   ...
+        //
+        ConsumerRecords<String, String> recordSet1 = getConsumerRecords(topic, consumerConfig, Duration.ofMillis(400));
+        ConsumerRecords<String, String> recordSet2 = getConsumerRecords(topic, consumerConfig, Duration.ofMillis(400));
+        ConsumerRecords<String, String> recordSet3 = getConsumerRecords(topic, consumerConfig, Duration.ofMillis(400));
+
+        if (recordSet1 == null || recordSet1.isEmpty()) {
+            System.out.println("No data found in record set 1");
+        } else {
+            for (ConsumerRecord<String, String> record : recordSet1) {
+                System.out.println("Poll 1 - record: " + record.value());
+            }
+        }
+
+        if (recordSet2 == null || recordSet2.isEmpty()) {
+            System.out.println("No data found in record set 2");
+        } else {
+            for (ConsumerRecord<String, String> record : recordSet2) {
+                System.out.println("Poll 2 - record: " + record.value());
+            }
+        }
+
+        if (recordSet3 == null || recordSet3.isEmpty()) {
+            System.out.println("No data found in record set 3");
+        } else {
+            for (ConsumerRecord<String, String> record : recordSet3) {
+                System.out.println("Poll 3 - record: " + record.value());
+            }
+        }
+    }
+
+    private ConsumerRecords<String, String> getConsumerRecords(String topicName,
+                                                               Properties consumerConfig, Duration duration) {
+        try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
+            consumer.subscribe(Arrays.asList(topicName));
+            return consumer.poll(duration);
+        }
+    }
+
+    private Properties prepareConsumerProperties(String scopeName, String controllerUri, String consumerGroupId,
+                                                 String clientId) {
+        Properties consumerConfig = new Properties();
+        consumerConfig.put("bootstrap.servers", controllerUri);
+        consumerConfig.put("group.id", consumerGroupId);
+        consumerConfig.put("client.id", clientId);
+        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("pravega.scope", scopeName);
+        return consumerConfig;
+    }
+
+    @Test
+    public void testReceivesMessagesFromMulltipleTopics() {
+        // TODO:
     }
 }
