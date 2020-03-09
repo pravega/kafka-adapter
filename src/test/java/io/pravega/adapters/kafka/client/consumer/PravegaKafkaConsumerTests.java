@@ -75,6 +75,22 @@ public class PravegaKafkaConsumerTests {
         assertEquals(0, consumer.subscription().size());
     }
 
+    @Test(expected =  IllegalArgumentException.class)
+    public void negativePollTimeoutThrowsException() {
+        PravegaKafkaConsumer<String, Object> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        consumer.subscribe(Arrays.asList("topic-1"));
+
+        consumer.poll(-1L);
+    }
+
+    @Test(expected =  IllegalStateException.class)
+    public void pollWithoutSubscribeThrowsException() {
+        PravegaKafkaConsumer<String, Object> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        consumer.poll(1L);
+    }
+
     private Properties prepareDummyCompleteConsumerConfig() {
         Properties result = new Properties();
         result.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy");

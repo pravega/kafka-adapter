@@ -24,6 +24,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
@@ -46,6 +47,10 @@ import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 
 @Slf4j
 public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
+
+    private static final int DEFAULT_READ_TIMEOUT_INMILLIS = 500;
+
+    private static final int DEFAULT_RECORDSTOREAD_PERREADER_PERITERATION = 10;
 
     private final ConsumerConfig consumerConfig;
 
@@ -181,7 +186,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
         ensureNotClosed();
-        if (timeout < -1) {
+        if (timeout <= -1) {
             throw new IllegalArgumentException("Specified timeout is a negative value");
         }
 
@@ -208,8 +213,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         //      - AuthorizationException - if caller doesnot have access to the stream segments
         //
         //
-        log.info("Polling with timeout {}", timeout);
-        ConsumerRecords<K, V> consumerRecords = read(timeout);
+
+        // Note: Here, we are assuming a timeout of DEFAULT_READ_TIMEOUT_INMILLIS (=500 ms) if timeout = 0. In
+        // KafkaConsumer, on the other hand, all the preexisting records in the buffer are immediately returned
+        // without any delay.
+        ConsumerRecords<K, V> consumerRecords = read(timeout > 0 ? timeout : DEFAULT_READ_TIMEOUT_INMILLIS,
+                DEFAULT_RECORDSTOREAD_PERREADER_PERITERATION);
         return invokeInterceptors(this.interceptors, consumerRecords);
     }
 
@@ -217,48 +226,66 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         return this.readersByStream.size() > 0;
     }
 
-    /**
-     *
-     * @param timeout
-     * @return
-     */
-    private ConsumerRecords<K, V> read(long timeout) {
+
+    @VisibleForTesting
+    ConsumerRecords<K, V> read(long timeout, int numRecordsPerReaderInEachIteration) {
+        log.debug("read invoked with timeout: {} and numRecordsPerReaderInEachIteration: {}", timeout,
+                numRecordsPerReaderInEachIteration);
+
+        assert(timeout > 0);
+        assert(numRecordsPerReaderInEachIteration > 0);
         ensureNotClosed();
 
-        // TODO: return immediately with values in the buffer if timeout is 0
+        // We use this to honor the timeout, on a best effort basis. The timeout out not strict - there will be cases
+        // where result is returned in a duration that is slightly later than the specified timeout.
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
-        // TODO: Honor the timeout
         final Map<TopicPartition, List<ConsumerRecord<K, V>>> recordsByPartition = new HashMap<>();
 
-        this.readersByStream.entrySet().stream()
-                .forEach(i -> {
+        // Check that we haven't crossed the timeout yet before starting the iteration again
+        while (stopWatch.getTime() < timeout) {
+            this.readersByStream.entrySet().stream().forEach(i -> {
+                ensureNotClosed();
+
+                // Check that we haven't crossed the timeout yet before initiating reads from the next reader.
+                if (stopWatch.getTime() < timeout) {
                     String stream = i.getKey();
                     log.debug("Reading data for topic/stream [{}/{}]", scope, i.getKey());
 
-                    // TODO: Should we return 0?
-                    TopicPartition topicPartition = new TopicPartition(stream, 0);
+                    TopicPartition topicPartition = new TopicPartition(stream, -1);
                     PravegaReader reader = i.getValue();
 
-                    List<ConsumerRecord<K, V>> records = new ArrayList<>();
+                    List<ConsumerRecord<K, V>> recordsToAdd = new ArrayList<>();
                     EventRead<V> event = null;
+
+                    int countOfReadEvents = 0;
                     do {
                         try {
                             event = reader.readNextEvent();
                             if (event.getEvent() != null) {
-                                log.debug("Found a non-null event");
-                                records.add(translateToConsumerRecord(stream, event));
+                                log.trace("Found a non-null event");
+                                recordsToAdd.add(translateToConsumerRecord(stream, event));
+                                countOfReadEvents++;
                             }
                         } catch (ReinitializationRequiredException e) {
                             throw e;
                         }
-                    } while (event.getEvent() != null);
-                    if (!records.isEmpty()) {
-                        // TODO: Handle the case where the partition is already there in the map.
-                        recordsByPartition.put(topicPartition, records);
-                    }
-                });
-        return new ConsumerRecords<K, V>(recordsByPartition);
+                    } while (event.getEvent() != null
+                            && countOfReadEvents <= numRecordsPerReaderInEachIteration
+                            && stopWatch.getTime() < timeout);
 
+                    if (!recordsToAdd.isEmpty()) {
+                        if (recordsByPartition.containsKey(topicPartition)) {
+                            recordsByPartition.get(topicPartition).addAll(recordsToAdd);
+                        } else {
+                            recordsByPartition.put(topicPartition, recordsToAdd);
+                        }
+                    }
+                }
+            });
+        }
+        return new ConsumerRecords<K, V>(recordsByPartition);
     }
 
     private ConsumerRecord<K, V> translateToConsumerRecord(String stream, EventRead<V> event) {

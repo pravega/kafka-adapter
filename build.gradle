@@ -26,6 +26,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     
+    compile group: "org.apache.commons", name: "commons-lang3", version: "${commonsLangVersion}"
     compile group: "io.pravega", name: "pravega-client", version: "${pravegaVersion}+"
     compile group: "io.pravega", name: "pravega-common", version: "${pravegaVersion}+"
     compile group: "org.slf4j", name: "slf4j-api", version: "${slf4jApiVersion}"

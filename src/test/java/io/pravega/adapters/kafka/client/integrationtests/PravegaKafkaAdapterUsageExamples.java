@@ -6,6 +6,7 @@ import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.client.stream.impl.JavaSerializer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.UUID;
@@ -140,7 +141,7 @@ public class PravegaKafkaAdapterUsageExamples {
         consumerConfig.put("bootstrap.servers", bootstrapServers);
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, "your_client_id");
-        consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        // consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -196,6 +197,53 @@ public class PravegaKafkaAdapterUsageExamples {
         });
 
         pravegaKafkaProducer.close();
+
+    }
+
+    @Test
+    public void testSendThenReceiveMultipleMessagesFromSingleTopic() throws ExecutionException, InterruptedException {
+        String scopeName = "multiple-messages";
+
+        Properties producerConfig = new Properties();
+        String topic = "test-topic-" + Math.random();
+
+        producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerConfig.put("pravega.scope", scopeName);
+
+        Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig);
+
+        for (int i = 0; i < 20; i++) {
+            ProducerRecord<String, String> producerRecord =
+                    new ProducerRecord<>(topic, 1, "test-key", "message-" + i);
+
+            // Sending synchronously
+            producer.send(producerRecord).get();
+        }
+
+        // Consume events
+        Properties consumerConfig = new Properties();
+        consumerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        consumerConfig.put("group.id", UUID.randomUUID().toString());
+        consumerConfig.put("client.id", "your_client_id");
+        consumerConfig.put("auto.offset.reset", "earliest");
+        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("pravega.scope", scopeName);
+
+        Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig);
+        consumer.subscribe(Arrays.asList(topic));
+
+        try {
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
+            for (ConsumerRecord<String, String> record : records) {
+                String readPerson = record.value();
+                System.out.println("Consumed a record containing value: " + readPerson);
+            }
+        } finally {
+            consumer.close();
+        }
 
     }
 }
