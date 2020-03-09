@@ -93,7 +93,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         if (isClosed) {
             return;
         }
-        log.info("Flushing...");
+        log.debug("Flushing...");
         writer.flush();
     }
 
