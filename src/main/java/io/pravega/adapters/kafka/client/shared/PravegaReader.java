@@ -11,8 +11,8 @@ import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
 
 import java.net.URI;
-import java.util.UUID;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,12 +32,8 @@ public class PravegaReader<T> implements AutoCloseable {
     private EventStreamReader<T> reader;
     private ReaderGroupManager readerGroupManager;
 
-    public PravegaReader(String scope, String stream, String controllerUri, Serializer serializer) {
-        this(scope, stream, controllerUri, serializer, UUID.randomUUID().toString(), "readerId");
-    }
-
-    public PravegaReader(String scope, String stream, String controllerUri, Serializer serializer,
-                         String readerGroupName, String readerId) {
+    public PravegaReader(@NonNull String scope, @NonNull String stream, @NonNull String controllerUri,
+                         @NonNull Serializer serializer, @NonNull String readerGroupName, @NonNull String readerId) {
         this.scope = scope;
         this.stream = stream;
         this.controllerUri = controllerUri;

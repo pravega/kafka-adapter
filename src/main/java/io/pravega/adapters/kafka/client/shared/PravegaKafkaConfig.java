@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
@@ -106,6 +108,14 @@ public class PravegaKafkaConfig {
                 throw new IllegalStateException(e);
             }
         }
+    }
+
+    public String groupId(String defaultValue) {
+        return props.getProperty(ConsumerConfig.GROUP_ID_CONFIG, defaultValue);
+    }
+
+    public String clientId(String defaultValue) {
+        return props.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
     }
 
     public List<ConsumerInterceptor> consumerInterceptors() {

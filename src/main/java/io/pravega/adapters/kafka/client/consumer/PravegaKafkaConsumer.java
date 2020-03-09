@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -48,17 +49,19 @@ import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 @Slf4j
 public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
-    private static final int DEFAULT_READ_TIMEOUT_INMILLIS = 500;
+    private static final int DEFAULT_READ_TIMEOUT_IN_MILLIS = 500;
 
-    private static final int DEFAULT_RECORDSTOREAD_PERREADER_PERITERATION = 10;
-
-    private final ConsumerConfig consumerConfig;
+    private static final int DEFAULT_RECORDS_TO_READ_PER_READER_AND_ITERATION = 10;
 
     private final List<ConsumerInterceptor<K, V>> interceptors;
 
     private final String controllerUri;
 
     private final String scope;
+
+    private final String readerGroupId;
+
+    private final String readerId;
 
     @VisibleForTesting
     @Getter(AccessLevel.PACKAGE)
@@ -93,12 +96,13 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
             throw new IllegalArgumentException("Value deserializer is not set");
         }
 
-        consumerConfig = new ConsumerConfig(configProperties);
         controllerUri = config.serverEndpoints();
         scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
         deserializer = config.deserializer();
+        readerGroupId = config.groupId(UUID.randomUUID().toString());
+        readerId = config.clientId("readerId");
 
-        interceptors = (List) consumerConfig.getConfiguredInstances(
+        interceptors = (List) (new ConsumerConfig(configProperties)).getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
     }
 
@@ -139,13 +143,15 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
         Map<String, PravegaReader> oldReadersByStream = this.readersByStream;
         readersByStream = new HashMap<>();
+
         for (String topic : topics) {
             if (!readersByStream.containsKey(topic)) {
                 PravegaReader reader = null;
                 if (oldReadersByStream.containsKey(topic)) {
                     reader = oldReadersByStream.get(topic);
                 } else {
-                    reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer);
+                    reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer,
+                            this.readerGroupId, this.readerId);
                 }
                 readersByStream.put(topic, reader);
                 oldReadersByStream.remove(topic);
@@ -214,11 +220,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         //
         //
 
-        // Note: Here, we are assuming a timeout of DEFAULT_READ_TIMEOUT_INMILLIS (=500 ms) if timeout = 0. In
+        // Note: Here, we are assuming a timeout of DEFAULT_READ_TIMEOUT_IN_MILLIS (=500 ms) if timeout = 0. In
         // KafkaConsumer, on the other hand, all the preexisting records in the buffer are immediately returned
         // without any delay.
-        ConsumerRecords<K, V> consumerRecords = read(timeout > 0 ? timeout : DEFAULT_READ_TIMEOUT_INMILLIS,
-                DEFAULT_RECORDSTOREAD_PERREADER_PERITERATION);
+        ConsumerRecords<K, V> consumerRecords = read(timeout > 0 ? timeout : DEFAULT_READ_TIMEOUT_IN_MILLIS,
+                DEFAULT_RECORDS_TO_READ_PER_READER_AND_ITERATION);
         return invokeInterceptors(this.interceptors, consumerRecords);
     }
 

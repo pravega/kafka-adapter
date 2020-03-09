@@ -53,7 +53,8 @@ public class AdapterUsageBasicExamples {
         assertNotNull(recordMedata.get());
 
         try (PravegaReader<String> reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                new PravegaKafkaConfig(producerConfig).serverEndpoints(), new JavaSerializer<String>())) {
+                new PravegaKafkaConfig(producerConfig).serverEndpoints(), new JavaSerializer<String>(),
+                UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext());
         }
     }
@@ -83,7 +84,7 @@ public class AdapterUsageBasicExamples {
 
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
                 new PravegaKafkaConfig(producerConfig).serverEndpoints(),
-                new JavaSerializer<String>())) {
+                new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext());
         }
     }
@@ -148,7 +149,8 @@ public class AdapterUsageBasicExamples {
 
         // First let's make sure that the event is actually there in the stream.
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>())) {
+                new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>(),
+                UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext());
             System.out.format("Found expected message in in scope/stream %s/%s%n", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);

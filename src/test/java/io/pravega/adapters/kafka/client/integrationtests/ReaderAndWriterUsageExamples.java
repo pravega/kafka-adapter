@@ -24,7 +24,8 @@ public class ReaderAndWriterUsageExamples {
                     .join();
         }
 
-        try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>())) {
+        try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
+                UUID.randomUUID().toString(), "readerId")) {
             assertEquals("Message - 1", reader.readNext());
             assertEquals("Message - 2", reader.readNext());
             assertEquals("Message - 3", reader.readNext());
