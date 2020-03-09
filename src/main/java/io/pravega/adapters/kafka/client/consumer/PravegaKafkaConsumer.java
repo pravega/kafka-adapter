@@ -231,6 +231,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     ConsumerRecords<K, V> read(long timeout, int numRecordsPerReaderInEachIteration) {
         log.debug("read invoked with timeout: {} and numRecordsPerReaderInEachIteration: {}", timeout,
                 numRecordsPerReaderInEachIteration);
+        long startTimeInMillis = System.currentTimeMillis();
 
         assert(timeout > 0);
         assert(numRecordsPerReaderInEachIteration > 0);
@@ -285,6 +286,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 }
             });
         }
+        log.debug("Returning results in {} ms. against a timeout of {} ms.",
+                System.currentTimeMillis() - startTimeInMillis, timeout);
         return new ConsumerRecords<K, V>(recordsByPartition);
     }
 
