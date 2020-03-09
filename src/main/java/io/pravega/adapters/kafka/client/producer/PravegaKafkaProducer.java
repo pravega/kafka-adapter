@@ -95,8 +95,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
-        log.debug("Arguments: record={}, callback={}", record, callback);
-        log.info("Sending producer record");
+        log.trace("Arguments: record={}, callback={}", record, callback);
         ProducerRecord<K, V> interceptedRecord = this.interceptors.onSend(record);
         return doSend(interceptedRecord, callback);
     }
@@ -125,11 +124,11 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
         cf.handle((rm, t) -> {
             if (callback != null) {
-                log.info("Callback is not null, invoking it");
+                log.debug("Callback is not null, invoking it");
                 Exception exception = t != null ? new Exception(t) : null;
                 callback.onCompletion(rm, exception);
             } else {
-                log.debug("Callback is null");
+                log.trace("Callback is null");
             }
             return null;
         });
