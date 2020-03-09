@@ -4,6 +4,7 @@ import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
+import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.time.Duration;
@@ -26,12 +27,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Contains examples demonstrating the use of Kafka producer and serialization implementations of the the Kafka Adapter.
  */
-public class PravegaKafkaAdapterUsageExamples {
+public class AdapterUsageBasicExamples {
 
     @Test
     public void testProduceWithMinimalKafkaConfig() throws ExecutionException, InterruptedException {
@@ -196,93 +196,22 @@ public class PravegaKafkaAdapterUsageExamples {
             System.out.println("Produced record metadata: " + metadata);
             assertNotNull(metadata);
         });
-
         pravegaKafkaProducer.close();
-
     }
 
     @Test
-    public void testSendThenReceiveMultipleMessagesFromSingleTopic() throws ExecutionException, InterruptedException {
-        String scopeName = "multiple-messages";
-
-        Properties producerConfig = new Properties();
-        String topic = "test-topic-" + Math.random();
-
-        producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
-        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("pravega.scope", scopeName);
-
-        Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig);
-
-        for (int i = 0; i < 20; i++) {
-            ProducerRecord<String, String> producerRecord =
-                    new ProducerRecord<>(topic, 1, "test-key", "message-" + i);
-
-            // Sending synchronously
-            producer.send(producerRecord).get();
-        }
-
-        // Consume events
-        Properties consumerConfig = new Properties();
-        consumerConfig.put("bootstrap.servers", "tcp://localhost:9090");
-        consumerConfig.put("group.id", UUID.randomUUID().toString());
-        consumerConfig.put("client.id", "your_client_id");
-        consumerConfig.put("auto.offset.reset", "earliest");
-        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerConfig.put("pravega.scope", scopeName);
-
-        Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig);
-        consumer.subscribe(Arrays.asList(topic));
-
-        try {
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
-            for (ConsumerRecord<String, String> record : records) {
-                String readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
-            }
-            assertEquals(20, records.count());
-        } finally {
-            consumer.close();
-        }
-    }
-
-    @Test
-    public void testReceivesPartialSetOfWhenTimeoutExceedsTimeToFetchAll() {
-        String scopeName = "multiple-messages";
-
-        Properties producerConfig = new Properties();
+    public void testReceivesEmptyMessagesOnPollWhenNoEventsPresent() {
+        /// Keeping scope and topic names random to eliminate the chances of it already being present.
+        String scopeName = "multiple-messages-" + Math.random();
         String topicName = "test-topic-" + Math.random();
         String controllerUri = "tcp://localhost:9090";
 
-        producerConfig.put("bootstrap.servers", controllerUri);
-        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("pravega.scope", scopeName);
-
-        try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
-            for (int i = 0; i < 50; i++) {
-                ProducerRecord<String, String> producerRecord =
-                        new ProducerRecord<>(topicName, 1, "test-key", "message-" + i);
-
-                // Sending asynchronously
-                producer.send(producerRecord);
-            }
-            producer.flush();
+        // First let's ensure that the scope and topic are created
+        try (PravegaWriter writer = new PravegaWriter(scopeName, topicName, controllerUri,
+                new JavaSerializer<String>())) {
+            writer.init();
         }
 
-        int actualCountOfItemsInStream = 0;
-        // Finding out how many were really written
-        try (PravegaReader reader = new PravegaReader(scopeName, topicName, controllerUri, new JavaSerializer<String>(),
-                "some-reader-group" + Math.random(), "some-reader-id")) {
-            while (reader.readNextEvent().getEvent() != null) {
-                actualCountOfItemsInStream++;
-            }
-        }
-        System.out.println("Actual no. of items in stream = " + actualCountOfItemsInStream);
-
-        // Consume events
         Properties consumerConfig = new Properties();
         consumerConfig.put("bootstrap.servers", controllerUri);
         consumerConfig.put("group.id", UUID.randomUUID().toString());
@@ -292,18 +221,10 @@ public class PravegaKafkaAdapterUsageExamples {
         consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerConfig.put("pravega.scope", scopeName);
 
-        Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig);
-        consumer.subscribe(Arrays.asList(topicName));
-
-        try {
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
-            for (ConsumerRecord<String, String> record : records) {
-                String readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
-            }
-            assertTrue(records.count() < actualCountOfItemsInStream);
-        } finally {
-            consumer.close();
+        try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
+            consumer.subscribe(Arrays.asList(topicName));
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+            assertEquals(0, records.count());
         }
     }
 }

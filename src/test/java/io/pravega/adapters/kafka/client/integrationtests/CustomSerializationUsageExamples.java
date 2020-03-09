@@ -1,4 +1,4 @@
-package io.pravega.adapters.kafka.client.integrationtests.serializers;
+package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
