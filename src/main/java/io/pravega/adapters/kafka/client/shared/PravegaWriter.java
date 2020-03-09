@@ -12,6 +12,7 @@ import io.pravega.client.stream.StreamConfiguration;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,12 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PravegaWriter<T> implements AutoCloseable {
 
+    @NonNull
     private final String scope;
 
+    @NonNull
     private final String stream;
 
+    @NonNull
     private final String controllerUri;
 
+    @NonNull
     private final Serializer<T> serializer;
 
     private StreamManager streamManager;
@@ -35,6 +40,8 @@ public class PravegaWriter<T> implements AutoCloseable {
     private boolean isInitialized() {
         return writer != null;
     }
+
+    private boolean isClosed = false;
 
     public void init() {
         if (isInitialized()) {
@@ -71,6 +78,10 @@ public class PravegaWriter<T> implements AutoCloseable {
     }
 
     public CompletableFuture<Void> writeEvent(T event) {
+        if (isClosed) {
+            throw new IllegalStateException("Already closed");
+        }
+
         if (!isInitialized()) {
             log.info("Not initialized already, initializing");
             this.init();
@@ -78,8 +89,20 @@ public class PravegaWriter<T> implements AutoCloseable {
         return writer.writeEvent(event);
     }
 
+    public void flush() {
+        if (isClosed) {
+            return;
+        }
+        log.info("Flushing...");
+        writer.flush();
+    }
+
     @Override
     public void close() {
+        isClosed = true;
+        if (!isInitialized()) {
+            return;
+        }
         log.debug("Closing...");
         writer.close();
         clientFactory.close();
