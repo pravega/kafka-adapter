@@ -68,24 +68,24 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void beginTransaction() throws ProducerFencedException {
-        log.info("Beginning transaction");
+        log.debug("Beginning transaction");
     }
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId)
             throws ProducerFencedException {
-        log.debug("Arguments: offsets={}, consumerGroupId={}", offsets, consumerGroupId);
+        log.trace("Arguments: offsets={}, consumerGroupId={}", offsets, consumerGroupId);
         log.debug("sending offsets to transaction");
     }
 
     @Override
     public void commitTransaction() throws ProducerFencedException {
-        log.info("Committing transaction");
+        log.debug("Committing transaction");
     }
 
     @Override
     public void abortTransaction() throws ProducerFencedException {
-        log.info("Aborting transaction");
+        log.debug("Aborting transaction");
     }
 
     @Override
@@ -178,7 +178,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void close(Duration timeout) {
-        log.debug("Closing the producer with timeout: {}", timeout);
+        log.trace("Closing the producer with timeout: {}", timeout);
         cleanup();
     }
 
