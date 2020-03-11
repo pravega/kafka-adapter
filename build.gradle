@@ -46,7 +46,7 @@ dependencies {
 
 checkstyle {
     toolVersion '7.8.1'
-    configFile file("src/main/resources/checkstyle.xml")
+    configFile file("$rootDir/config/checkstyle.xml")
 }
 checkstyleMain {
     source ='src/main/java'
@@ -81,8 +81,8 @@ shadowJar {
 // Configure Spotbugs
 spotbugs {
     effort = "max"
-    includeFilter = file("src/main/resources/spotbugs-include.xml")
-    excludeFilter = file("src/main/resources/spotbugs-exclude.xml")
+    includeFilter = file("$rootDir/config/spotbugs-include.xml")
+    excludeFilter = file("$rootDir/config/spotbugs-exclude.xml")
 }
 
 tasks.withType(com.github.spotbugs.SpotBugsTask) {
