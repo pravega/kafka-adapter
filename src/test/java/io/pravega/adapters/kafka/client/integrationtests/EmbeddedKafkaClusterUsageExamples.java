@@ -1,6 +1,6 @@
 package io.pravega.adapters.kafka.client.integrationtests;
 
-import io.pravega.adapters.kafka.client.common.Utils;
+import io.pravega.adapters.kafka.client.common.ChecksumMaker;
 import io.pravega.adapters.kafka.client.utils.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
@@ -122,7 +122,7 @@ public class EmbeddedKafkaClusterUsageExamples {
                 new ProducerRecord<>("test.topic.1", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
-        assertEquals(Utils.computeCRC32Checksum(producerRecord.toString()),
+        assertEquals(ChecksumMaker.computeCRC32Checksum(producerRecord.toString()),
                 recordMedataFuture.get().checksum());
     }
 

@@ -1,7 +1,7 @@
 package io.pravega.adapters.kafka.client.utils;
 
 
-import io.pravega.adapters.kafka.client.common.Utils;
+import io.pravega.adapters.kafka.client.common.ChecksumMaker;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class FakeKafkaProducer<K, V> implements Producer<K, V> {
         long timestamp = System.currentTimeMillis();
         int keySize = 2;
         int valueSize = 4;
-        Long checksum = Utils.computeCRC32Checksum(record.toString());
+        Long checksum = ChecksumMaker.computeCRC32Checksum(record.toString());
 
         RecordMetadata recordMetadata = new RecordMetadata(topicPartition, -1L, -1L,
                 timestamp, checksum, keySize, valueSize);

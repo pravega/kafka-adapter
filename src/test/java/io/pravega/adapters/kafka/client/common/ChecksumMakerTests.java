@@ -4,24 +4,24 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class UtilsTests {
+public class ChecksumMakerTests {
 
     @Test(expected = NullPointerException.class)
     public void testComputeCrcChecksumThrowsExceptionWhenInputIsNull() {
         String value = null;
-        Utils.computeCRC32Checksum(value);
+        ChecksumMaker.computeCRC32Checksum(value);
     }
 
     @Test(expected = NullPointerException.class)
     public void testComputeCrcChecksumThrowsExceptionWhenInputBytesIsNull() {
         byte[] value = null;
-        Utils.computeCRC32Checksum(value);
+        ChecksumMaker.computeCRC32Checksum(value);
     }
 
     @Test
     public void testComputeCrcChecksumWorksCorrectly() {
         String value = "The quick brown fox jumps over the lazy dog";
-        long crc32 = Utils.computeCRC32Checksum(value);
+        long crc32 = ChecksumMaker.computeCRC32Checksum(value);
         assertEquals("414fa339", Long.toHexString(crc32));
     }
 }
