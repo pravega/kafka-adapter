@@ -1,4 +1,4 @@
-package io.pravega.adapters.kafka.client.producer;
+package io.pravega.adapters.kafka.client.utils;
 
 
 import io.pravega.adapters.kafka.client.common.Utils;

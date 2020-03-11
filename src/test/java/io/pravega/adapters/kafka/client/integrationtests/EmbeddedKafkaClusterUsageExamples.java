@@ -1,7 +1,7 @@
 package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.common.Utils;
-import io.pravega.adapters.kafka.client.producer.FakeKafkaProducer;
+import io.pravega.adapters.kafka.client.utils.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;

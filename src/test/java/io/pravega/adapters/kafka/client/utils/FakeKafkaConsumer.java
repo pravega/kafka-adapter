@@ -1,4 +1,4 @@
-package io.pravega.adapters.kafka.client.consumer;
+package io.pravega.adapters.kafka.client.utils;
 
 import java.time.Duration;
 import java.util.Collection;
