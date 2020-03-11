@@ -12,6 +12,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -22,6 +23,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Slf4j
 public class AdapterUsageAdvancedExamples {
 
     @Test
@@ -62,7 +64,7 @@ public class AdapterUsageAdvancedExamples {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(5));
             for (ConsumerRecord<String, String> record : records) {
                 String readMessage = record.value();
-                System.out.println("Consumed a record containing value: " + readMessage);
+                log.info("Consumed a record containing value: " + readMessage);
             }
             assertEquals(20, records.count());
         } finally {
