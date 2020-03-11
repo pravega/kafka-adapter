@@ -8,6 +8,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Test;
 
 import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PravegaKafkaProducerTests {
 
@@ -51,10 +53,29 @@ public class PravegaKafkaProducerTests {
         assertThrows("Didn't encounter illegal state exception when aborting a transaction.",
                 () -> producer.abortTransaction(),
                 e -> e instanceof IllegalStateException);
+    }
 
-        assertThrows("Didn't encounter illegal state exception when flushing a transaction.",
-                () -> producer.flush(),
-                e -> e instanceof IllegalStateException);
+    @Test
+    public void operationsReturnEmptyResults() {
+        Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig());
+        assertNotNull(producer.partitionsFor("whetever"));
+        assertTrue(producer.partitionsFor("whetever").isEmpty());
+
+        assertNotNull(producer.metrics());
+        assertTrue(producer.metrics().isEmpty());
+    }
+
+    @Test
+    public void sendThrowsExceptionIfRecordIsInvalid() {
+        Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig());
+
+        assertThrows("Didn't encounter expected exception.",
+                () -> producer.send(new ProducerRecord<>(null, "message")),
+                e -> e instanceof IllegalArgumentException);
+
+        assertThrows("Didn't encounter expected exception.",
+                () -> producer.send(new ProducerRecord<>("topic", null)),
+                e -> e instanceof IllegalArgumentException);
     }
 
     private Properties prepareDummyMinimalConfig() {
