@@ -16,7 +16,7 @@
     <logger name="org.apache.kafka" level="error"/>
     <logger name="org.apache.curator" level="error"/>
     <logger name="io.grpc.netty" level="error"/>
-    <logger name="io.pravega.adapters" level="debug"/>
+    <logger name="io.pravega.adapters" level="info"/>
     <logger name="io.netty" level="error"/>
     <logger name="kafka" level="error"/>
 </configuration>

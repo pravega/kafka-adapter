@@ -3,6 +3,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
+import io.pravega.adapters.kafka.client.utils.ConfigMaker;
 import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.time.Duration;
@@ -72,7 +73,6 @@ public class AdapterUsageAdvancedExamples {
     @Test
     public void testReceivesPartialSetOfMessagesUponTimeout() {
         String scopeName = "multiple-messages";
-
         String topicName = "test-topic-" + Math.random();
         String controllerUri = "tcp://localhost:9090";
 
@@ -214,11 +214,7 @@ public class AdapterUsageAdvancedExamples {
         String consumerGroupId = "test-cg";
         String clientId = "test-cid";
 
-        Properties producerConfig = new Properties();
-        producerConfig.put("bootstrap.servers", controllerUri);
-        producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("pravega.scope", scope);
+        Properties producerConfig = ConfigMaker.makeProducerProperties(scope, controllerUri, null, null);
 
         try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
             for (int i = 0; i < 200; i++) {
@@ -232,7 +228,7 @@ public class AdapterUsageAdvancedExamples {
         }
 
         // Consume events
-        Properties consumerConfig = prepareConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
+        Properties consumerConfig = ConfigMaker.makeConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
 
         // Inspect the output to check if the behavior is as expected. You should see something like below in the
         // console output. Poll 3 starts from where poll 2 left. And, poll 2 starts from where poll 1 left.
@@ -272,28 +268,61 @@ public class AdapterUsageAdvancedExamples {
         }
     }
 
+    // Not working yet
+    @Test
+    public void testReceivesMessagesFromMultipleTopics() {
+        String scope = "multiple-topics" + Math.random();
+        String topic1 = "test-topic-1";
+        String topic2 = "test-topic-2";
+        String controllerUri = "tcp://localhost:9090";
+        String consumerGroupId = "test-cg";
+        String clientId = "test-cid";
+
+        Properties producerConfig = ConfigMaker.makeProducerProperties(scope, controllerUri, null, null);
+
+        try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
+            for (int i = 0; i < 2; i++) {
+                ProducerRecord<String, String> producerRecord =
+                        new ProducerRecord<>(topic1, 1, "test-key", "message-" + i);
+
+                // Sending asynchronously
+                producer.send(producerRecord);
+            }
+            producer.flush();
+        }
+
+        try (Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig)) {
+            for (int i = 0; i < 2; i++) {
+                ProducerRecord<String, String> producerRecord =
+                        new ProducerRecord<>(topic2, 1, "test-key", "message-" + i);
+
+                // Sending asynchronously
+                producer.send(producerRecord);
+            }
+            producer.flush();
+        }
+
+        Properties consumerConfig = ConfigMaker.makeConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
+
+        // PravegaReader reader = new PravegaReader(scope, test1)
+
+
+        try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
+            consumer.subscribe(Arrays.asList(topic1, topic2));
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(5000));
+            for (ConsumerRecord<String, String> record : records) {
+                String readMessage = record.value();
+                System.out.println("Consumed a record containing value: " + readMessage);
+            }
+            assertEquals(4, records.count());
+        }
+    }
+
     private ConsumerRecords<String, String> getConsumerRecords(String topicName,
                                                                Properties consumerConfig, Duration duration) {
         try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
             consumer.subscribe(Arrays.asList(topicName));
             return consumer.poll(duration);
         }
-    }
-
-    private Properties prepareConsumerProperties(String scopeName, String controllerUri, String consumerGroupId,
-                                                 String clientId) {
-        Properties consumerConfig = new Properties();
-        consumerConfig.put("bootstrap.servers", controllerUri);
-        consumerConfig.put("group.id", consumerGroupId);
-        consumerConfig.put("client.id", clientId);
-        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerConfig.put("pravega.scope", scopeName);
-        return consumerConfig;
-    }
-
-    @Test
-    public void testReceivesMessagesFromMulltipleTopics() {
-        // TODO:
     }
 }

@@ -11,7 +11,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class PravegaKafkaConsumerTests {
@@ -51,7 +51,7 @@ public class PravegaKafkaConsumerTests {
     }
 
     @Test
-    public void resubscribeReusesExistingReaders() {
+    public void resubscribeDoesNotReuseExistingReaders() {
         PravegaKafkaConsumer<String, Object> consumer =
                 new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
         consumer.subscribe(Arrays.asList("topic-1", "topic-2"));
@@ -61,7 +61,7 @@ public class PravegaKafkaConsumerTests {
         // Resubscribe with one of existing topics
         consumer.subscribe(Arrays.asList("topic-2", "topic-3"));
 
-        assertSame(reusablePravegaReader, consumer.getReadersByStream().get("topic-2"));
+        assertNotSame(reusablePravegaReader, consumer.getReadersByStream().get("topic-2"));
     }
 
     @Test

@@ -141,23 +141,31 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         log.debug("Subscribing to topics: {}, with callback {}", topics, callback);
         ensureNotClosed();
 
-        Map<String, PravegaReader> oldReadersByStream = this.readersByStream;
+        try {
+            this.readersByStream.forEach((k, v) -> v.close());
+        } catch (RuntimeException e) {
+            log.warn("Failed to close a reader", e);
+            // Ignore
+        }
+
         readersByStream = new HashMap<>();
 
+        int i = 0;
         for (String topic : topics) {
+            i++;
             if (!readersByStream.containsKey(topic)) {
-                PravegaReader reader = null;
-                if (oldReadersByStream.containsKey(topic)) {
-                    reader = oldReadersByStream.get(topic);
-                } else {
-                    reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer,
-                            this.readerGroupId, this.readerId);
+                String readerGroupName = this.readerGroupId;
+                if (topics.size() > 1) {
+                    readerGroupName = readerGroupName + "-" + i;
                 }
+                // The reason we are not reusing existing readers is because in the case of multiple topics,
+                // the internal topic name might change depending of the index of the topic in the list.
+                PravegaReader reader = new PravegaReader(this.scope, topic, this.controllerUri, this.deserializer,
+                        readerGroupName, this.readerId);
                 readersByStream.put(topic, reader);
-                oldReadersByStream.remove(topic);
             }
         }
-        oldReadersByStream.forEach((k, v) -> v.close());
+
     }
 
     @Override
