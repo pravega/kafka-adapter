@@ -35,7 +35,7 @@ public class PravegaKafkaConfigTests {
     public void populatingProducerInterceptor() {
         Properties props = new Properties();
         props.setProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
-                "io.pravega.adapters.kafka.client.producer.FakeKafkaProducerInterceptor");
+                "io.pravega.adapters.kafka.client.utils.FakeKafkaProducerInterceptor");
         PravegaKafkaConfig config = new PravegaKafkaConfig(props);
         ProducerInterceptors<String, String> interceptors = new ProducerInterceptors<String, String>(null);
         config.populateProducerInterceptors(interceptors);
