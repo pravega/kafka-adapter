@@ -13,6 +13,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +45,8 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final Serializer<V> serializer;
 
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
+
     public PravegaKafkaProducer(Properties configProperties) {
         if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
             throw new IllegalArgumentException(String.format("Property [%s] is not set",
@@ -63,12 +66,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void initTransactions() {
+        ensureNotClosed();
         log.debug("Initializing transactions");
         // TODO: implementation
     }
 
     @Override
     public void beginTransaction() throws ProducerFencedException {
+        ensureNotClosed();
         log.debug("Beginning transaction");
         // TODO: implementation
     }
@@ -81,12 +86,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void commitTransaction() throws ProducerFencedException {
+        ensureNotClosed();
         log.debug("Committing transaction");
         // TODO: implementation
     }
 
     @Override
     public void abortTransaction() throws ProducerFencedException {
+        ensureNotClosed();
         log.debug("Aborting transaction");
         // TODO: implementation
     }
@@ -104,6 +111,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
+        ensureNotClosed();
         String stream = record.topic();
         PravegaWriter<V> writer;
         if (this.writersByStream.containsKey(stream)) {
@@ -151,12 +159,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void flush() {
+        ensureNotClosed();
         log.trace("Flushing");
         this.writersByStream.values().stream().forEach(i -> i.flush());
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
+        ensureNotClosed();
         log.trace("Returning empty partitions for topic: {}", topic);
         return new ArrayList<>();
     }
@@ -186,6 +196,13 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     private void cleanup() {
+        isClosed.set(true);
         writersByStream.forEach((k, v) -> v.close());
+    }
+
+    private void ensureNotClosed() {
+        if (isClosed.get()) {
+            throw new IllegalStateException("This instance is closed already");
+        }
     }
 }
