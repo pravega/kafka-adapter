@@ -522,7 +522,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private void ensureNotClosed() {
         if (isClosed.get()) {
-            throw new IllegalStateException("This PravegaKafkaConsumer instance is closed already");
+            throw new IllegalStateException("This instance is closed already");
         }
     }
 }
