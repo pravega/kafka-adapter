@@ -16,10 +16,9 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-
 @Slf4j
 @RequiredArgsConstructor
-public class PravegaWriter<T> implements AutoCloseable {
+public class PravegaWriter<T> implements Writer<T> {
 
     @NonNull
     private final String scope;
@@ -42,6 +41,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         return writer != null;
     }
 
+    @Override
     public void init() {
         if (isInitialized()) {
             log.debug("Already initialized");
@@ -76,6 +76,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         log.debug("Creating a writer for scope/stream: {}/{}", scope, stream);
     }
 
+    @Override
     public CompletableFuture<Void> writeEvent(T event) {
         if (isClosed) {
             throw new IllegalStateException("Already closed");
@@ -88,6 +89,7 @@ public class PravegaWriter<T> implements AutoCloseable {
         return writer.writeEvent(event);
     }
 
+    @Override
     public void flush() {
         if (isClosed) {
             return;

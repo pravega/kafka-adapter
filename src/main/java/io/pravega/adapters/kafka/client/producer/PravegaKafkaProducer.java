@@ -2,6 +2,7 @@ package io.pravega.adapters.kafka.client.producer;
 
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
+import io.pravega.adapters.kafka.client.shared.Writer;
 import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -41,7 +43,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final String scope;
 
-    private final Map<String, PravegaWriter> writersByStream = new HashMap<>();
+    private final Map<String, Writer<V>> writersByStream;
 
     private final Serializer<V> serializer;
 
@@ -62,6 +64,8 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
         interceptors = new ProducerInterceptors<K, V>(new ArrayList<>());
         config.populateProducerInterceptors(interceptors);
+
+        writersByStream = new HashMap<>();
     }
 
     @Override
@@ -104,16 +108,19 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     @Override
-    public Future<RecordMetadata> send(ProducerRecord<K, V> record, Callback callback) {
+    public Future<RecordMetadata> send(@NonNull ProducerRecord<K, V> record, Callback callback) {
         log.trace("Arguments: record={}, callback={}", record, callback);
         ProducerRecord<K, V> interceptedRecord = this.interceptors.onSend(record);
+        ensureNotClosed();
         return doSend(interceptedRecord, callback);
     }
 
     private Future<RecordMetadata> doSend(ProducerRecord<K, V> record, Callback callback) {
-        ensureNotClosed();
+        if (record.topic() == null || record.value() == null) {
+            throw new IllegalArgumentException("Specified record is not valid");
+        }
         String stream = record.topic();
-        PravegaWriter<V> writer;
+        Writer<V> writer;
         if (this.writersByStream.containsKey(stream)) {
             writer = this.writersByStream.get(stream);
 
@@ -166,7 +173,6 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        ensureNotClosed();
         log.trace("Returning empty partitions for topic: {}", topic);
         return new ArrayList<>();
     }
@@ -197,7 +203,13 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private void cleanup() {
         isClosed.set(true);
-        writersByStream.forEach((k, v) -> v.close());
+        writersByStream.forEach((k, v) -> {
+            try {
+                v.close();
+            } catch (Exception e) {
+                log.warn("Exception in closing the writer", e);
+            }
+        });
     }
 
     private void ensureNotClosed() {
