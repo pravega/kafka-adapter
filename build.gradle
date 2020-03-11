@@ -3,6 +3,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'com.github.spotbugs' version '3.0.0'
     id 'jacoco'
+    id "io.franzbecker.gradle-lombok" version "3.3.0"
 }
 
 group 'io.pravega.adapters.kafka'
@@ -79,6 +80,16 @@ shadowJar {
     relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
 }
 
+// Delombok sources.
+task delombok(type: io.franzbecker.gradle.lombok.task.DelombokTask, dependsOn: compileJava) {
+    ext.outputDir = file("$buildDir/delombok")
+    outputs.dir(outputDir)
+    sourceSets.main.java.srcDirs.each {
+        inputs.dir(it)
+        args(it, "-d", outputDir)
+    }
+}
+
 // Configure Spotbugs
 spotbugs {
     effort = "max"
@@ -98,6 +109,7 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.enabled false
         csv.enabled false
