@@ -6,7 +6,7 @@ This adapter replaces `org.apache.kafka.clients.producer.KafkaProducer` and `org
 
 ## How to Build
 
-```
+```bash
 # Building the project
 $ ./gradlew build
 
@@ -20,4 +20,25 @@ Add the following to your dependencies list. Replace the version if necessary.
 
 ```
 compile group: "io.pravega.adapters.kafka", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
+```
+
+# Code Analysis and Test Coverage
+
+```bash
+# Running Checkstyle
+$ ./gradlew checkstyleMain
+$ ./gradlew checkstyleTest
+
+# Running Spotbugs
+$ ./gradlew spotbugsMain
+$ ./gradlew spotbugsTest
+
+# Running all checks
+$ ./gradlew check
+
+# Generating unit test coverage report. Output can be found in build/jococoHtml
+$ ./gradlew jacocoTestReport
+
+# Seeing other available tasks
+$ ./gradlew tasks
 ```
