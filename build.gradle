@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'com.github.spotbugs' version '3.0.0'
+    id 'jacoco'
 }
 
 group 'io.pravega.adapters.kafka'
@@ -89,5 +90,17 @@ tasks.withType(com.github.spotbugs.SpotBugsTask) {
     reports {
         xml.enabled = false
         html.enabled = true
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination file("${buildDir}/jacocoHtml")
     }
 }
