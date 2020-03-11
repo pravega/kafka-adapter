@@ -16,6 +16,13 @@ public class ConfigMaker {
 
     public static Properties makeTestProperties(String scopeName, String controllerUri, String groupId,
                                                  String clientId, boolean isProducer) {
+        return makeTestProperties(scopeName, controllerUri, groupId, clientId, null, null,
+                isProducer);
+    }
+
+    public static Properties makeTestProperties(String scopeName, String controllerUri, String groupId,
+                                                String clientId, String transactionalId, String transactionTimeoutInMs,
+                                                boolean isProducer) {
 
         Properties config = new Properties();
         config.put("bootstrap.servers", controllerUri);
@@ -35,7 +42,15 @@ public class ConfigMaker {
         if (scopeName != null) {
             config.put("pravega.scope", scopeName);
         }
-
+        if (isProducer && transactionalId != null) {
+            config.put("transactional.id", transactionalId);
+        }
+        if (isProducer && transactionalId != null) {
+            config.put("transactional.id", transactionalId);
+        }
+        if (isProducer && transactionTimeoutInMs != null) {
+            config.put("transaction.timeout.ms", transactionTimeoutInMs);
+        }
         return config;
     }
 }
