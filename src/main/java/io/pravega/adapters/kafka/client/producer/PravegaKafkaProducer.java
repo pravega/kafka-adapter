@@ -64,28 +64,31 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     @Override
     public void initTransactions() {
         log.debug("Initializing transactions");
+        // TODO: implementation
     }
 
     @Override
     public void beginTransaction() throws ProducerFencedException {
         log.debug("Beginning transaction");
+        // TODO: implementation
     }
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId)
             throws ProducerFencedException {
-        log.trace("Arguments: offsets={}, consumerGroupId={}", offsets, consumerGroupId);
-        log.debug("sending offsets to transaction");
+        throw new UnsupportedOperationException("Sending offsets to transaction is not supported");
     }
 
     @Override
     public void commitTransaction() throws ProducerFencedException {
         log.debug("Committing transaction");
+        // TODO: implementation
     }
 
     @Override
     public void abortTransaction() throws ProducerFencedException {
         log.debug("Aborting transaction");
+        // TODO: implementation
     }
 
     @Override
@@ -148,31 +151,31 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void flush() {
-        log.debug("Flushing");
+        log.trace("Flushing");
         this.writersByStream.values().stream().forEach(i -> i.flush());
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        log.debug("Returning empty partitions for topic: {}", topic);
+        log.trace("Returning empty partitions for topic: {}", topic);
         return new ArrayList<>();
     }
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        log.debug("Returning empty metrics map");
+        log.trace("Returning empty metrics map");
         return new HashMap<>();
     }
 
     @Override
     public void close() {
-        log.debug("Closing the producer");
+        log.trace("Closing the producer");
         cleanup();
     }
 
     @Override
     public void close(long timeout, TimeUnit unit) {
-        log.debug("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
+        log.trace("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
         cleanup();
     }
 
