@@ -36,12 +36,11 @@ public class PravegaWriter<T> implements AutoCloseable {
     private StreamManager streamManager;
     private EventStreamClientFactory clientFactory;
     private EventStreamWriter<T> writer;
+    private boolean isClosed = false;
 
     private boolean isInitialized() {
         return writer != null;
     }
-
-    private boolean isClosed = false;
 
     public void init() {
         if (isInitialized()) {

@@ -304,9 +304,6 @@ public class AdapterUsageAdvancedExamples {
 
         Properties consumerConfig = ConfigMaker.makeConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
 
-        // PravegaReader reader = new PravegaReader(scope, test1)
-
-
         try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
             consumer.subscribe(Arrays.asList(topic1, topic2));
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(5000));

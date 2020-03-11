@@ -14,7 +14,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 @Slf4j
 public class KafkaConsumerApp {
 
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         Properties props = new Properties();
         props.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
         props.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());

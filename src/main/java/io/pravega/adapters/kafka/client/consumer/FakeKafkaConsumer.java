@@ -62,11 +62,6 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     @Override
-    public void assign(Collection<TopicPartition> partitions) {
-        log.info("Assigning partitions: {}", partitions);
-    }
-
-    @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
         log.info("Subscribing. pattern: {}, callback: {}", pattern, callback);
     }
@@ -74,6 +69,11 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public void subscribe(Pattern pattern) {
         log.debug("Subscribing. pattern: {}", pattern);
+    }
+
+    @Override
+    public void assign(Collection<TopicPartition> partitions) {
+        log.info("Assigning partitions: {}", partitions);
     }
 
     @Override

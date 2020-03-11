@@ -34,12 +34,12 @@ public class PravegaKafkaConfig {
 
     private final Properties props;
 
-    public String serverEndpoints() {
-        return serverEndpoints(null);
-    }
-
     public void setProperty(String key, String value) {
         this.props.setProperty(key, value);
+    }
+
+    public String serverEndpoints() {
+        return serverEndpoints(null);
     }
 
     public String serverEndpoints(String defaultValue) {

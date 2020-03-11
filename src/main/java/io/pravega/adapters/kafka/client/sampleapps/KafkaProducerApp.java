@@ -10,7 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 @Slf4j
 public class KafkaProducerApp {
 
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         Properties props = new Properties();
         props.put("bootstrap.servers", System.getProperty("bootstrap.servers", "localhost:9092"));
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");

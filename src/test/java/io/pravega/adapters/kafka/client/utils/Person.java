@@ -7,6 +7,10 @@ import lombok.ToString;
 @ToString
 public class Person {
 
+    private String firstName;
+    private String lastName;
+    private String userName;
+
     public Person() {}
 
     public Person(String firstName, String lastName, String userName) {
@@ -23,8 +27,6 @@ public class Person {
         this.firstName = firstName;
     }
 
-    private String firstName;
-
     public String getLastName() {
         return lastName;
     }
@@ -40,8 +42,4 @@ public class Person {
     public void setUserName(String userName) {
         this.userName = userName;
     }
-
-    private String lastName;
-
-    private String userName;
 }

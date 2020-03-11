@@ -125,7 +125,6 @@ public class ReaderAndWriterUsageExamples {
         writer1.writeEvent(writeEvent1).join();
         System.out.format("Done writing event 1 = [%s] to stream 1 = [%s]%n", writeEvent1, stream1);
 
-
         @Cleanup
         EventStreamWriter<String> writer2 = clientFactory.createEventWriter(stream2,
                 new JavaSerializer<String>(), EventWriterConfig.builder().build());

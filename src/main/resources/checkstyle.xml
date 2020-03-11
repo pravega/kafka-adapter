@@ -16,6 +16,27 @@
     </module>-->
     <module name="SuppressWarningsFilter"/>
     <module name="FileTabCharacter"/>
+    <module name="FileLength">
+        <property name="max" value="3000" />
+        <property name="severity" value="warning" />
+    </module>
+    <module name="NewlineAtEndOfFile">
+        <property name="lineSeparator" value="lf" />
+    </module>
+    <module name="RegexpSingleline">
+        <!-- Checks that FIXME is not used in comments.  TODO is preferred.
+        -->
+        <property name="format" value="((//.*)|(\*.*))FIXME" />
+        <property name="message" value='TODO is preferred to FIXME.  e.g. "TODO: (ENG-123) -  Refactor when v2 is released."' />
+    </module>
+
+    <module name="RegexpSingleline">
+        <!-- Checks that TODOs are named with some basic formatting. Checks for the following pattern  TODO: (
+        -->
+        <property name="format" value="((//.*)|(\*.*))TODO[^: (]" />
+        <property name="message" value='All TODOs should be named.  e.g. "TODO: (ENG-123) - Refactor when v2 is released."' />
+    </module>
+
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder" />
         <module name="SuppressWarnings"/>

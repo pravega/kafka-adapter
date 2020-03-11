@@ -46,8 +46,6 @@ public class PravegaWriterTests {
         } catch (NullPointerException e) {
             // Expected
         }
-
-
     }
 
     private PravegaWriter prepareDummy() {

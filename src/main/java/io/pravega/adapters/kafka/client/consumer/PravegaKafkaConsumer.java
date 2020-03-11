@@ -169,11 +169,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     @Override
-    public void assign(Collection<TopicPartition> partitions) {
-        throw new UnsupportedOperationException("Assigning partitions not supported");
-    }
-
-    @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
         throw new UnsupportedOperationException("Subscribing to topic(s) matching specified pattern is not supported");
     }
@@ -189,6 +184,16 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         log.debug("Un-subscribing from all topics");
         readersByStream.forEach((k, v) -> v.close());
         readersByStream = new HashMap<>();
+    }
+
+    @Override
+    public void assign(Collection<TopicPartition> partitions) {
+        throw new UnsupportedOperationException("Assigning partitions not supported");
+    }
+
+    @Override
+    public ConsumerRecords<K, V> poll(Duration timeout) {
+        return poll(timeout.toMillis());
     }
 
     /**
@@ -247,8 +252,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 numRecordsPerReaderInEachIteration);
         long startTimeInMillis = System.currentTimeMillis();
 
-        assert(timeout > 0);
-        assert(numRecordsPerReaderInEachIteration > 0);
+        assert timeout > 0;
+        assert numRecordsPerReaderInEachIteration > 0;
         ensureNotClosed();
 
         // We use this to honor the timeout, on a best effort basis. The timeout out not strict - there will be cases
@@ -329,11 +334,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
             }
         }
         return processedRecords;
-    }
-
-    @Override
-    public ConsumerRecords<K, V> poll(Duration timeout) {
-        return poll(timeout.toMillis());
     }
 
     @Override
