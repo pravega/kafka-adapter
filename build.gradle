@@ -44,6 +44,7 @@ dependencies {
     testCompile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}", classifier: "test"
     testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
     testCompile group: "org.hamcrest", name: "hamcrest-all", version: "${hamcrestVersion}"
+    testCompile group: "org.mockito", name: "mockito-core", version: "${mockitoVersion}"
 }
 
 checkstyle {
