@@ -6,14 +6,33 @@ import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.util.Properties;
 
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
 import org.junit.Test;
 
+import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class PravegaKafkaConfigTests {
+
+    @Test
+    public void loadSerdeReturnsJavaSerializerForStringSerde() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        assertTrue(config.loadSerde("io.pravega.adapters.kafka.client.utils.StringSerializer")
+                instanceof JavaSerializer);
+        assertTrue(config.loadSerde("io.pravega.adapters.kafka.client.utils.StringDeserializer")
+                instanceof JavaSerializer);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void loadSerdeThrowsExceptionWhenSpecifiedSerializerIsNotFound() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty("serializer", "random.serializer");
+        config.loadSerde("serializer");
+    }
 
     @Test
     public void returnsStringSerializerByDefault() {
@@ -42,5 +61,46 @@ public class PravegaKafkaConfigTests {
         assertNotNull(interceptors);
     }
 
+    @Test
+    public void setPropertyUpdatesConfig() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty("key", "value");
+        assertEquals("value", config.getProperties().getProperty("key"));
+    }
+
+    @Test
+    public void setPropertyThrowsExceptionForNullInputs() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        assertThrows("Didn't encounter expected NullPointerException.",
+                () -> config.setProperty(null, "value"),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("Didn't encounter expected NullPointerException.",
+                () -> config.setProperty("key", null),
+                e -> e instanceof NullPointerException);
+    }
+
+    @Test
+    public void serverEndpointsReturnsPravegaConfigValueFirst() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty(PravegaKafkaConfig.CONTROLLER_URI, "pravega://localhost:9090");
+        config.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+        assertEquals("pravega://localhost:9090", config.serverEndpoints());
+    }
+
+    @Test
+    public void serverEndpointsReturnsKafkaConfigValueIfPravegaSpecificConfigUnspecified() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+        assertEquals("localhost:9092", config.serverEndpoints());
+    }
+
+    @Test
+    public void serverEndpointsReturnsSpecifiedDefaultValue() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        assertEquals("pravega://localhost:9090", config.serverEndpoints("pravega://localhost:9090"));
+    }
 
 }

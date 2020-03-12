@@ -1,5 +1,6 @@
 package io.pravega.adapters.kafka.client.shared;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.impl.JavaSerializer;
@@ -7,11 +8,14 @@ import io.pravega.client.stream.impl.JavaSerializer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
@@ -32,10 +36,12 @@ public class PravegaKafkaConfig {
 
     public static final String DEFAULT_SCOPE = "migrated-from-kafka";
 
-    private final Properties props;
+    @VisibleForTesting
+    @Getter(AccessLevel.PACKAGE)
+    private final Properties properties;
 
-    public void setProperty(String key, String value) {
-        this.props.setProperty(key, value);
+    public void setProperty(@NonNull String key, @NonNull String value) {
+        this.properties.setProperty(key, value);
     }
 
     public String serverEndpoints() {
@@ -43,27 +49,23 @@ public class PravegaKafkaConfig {
     }
 
     public String serverEndpoints(String defaultValue) {
-        String result = props.getProperty(PravegaKafkaConfig.CONTROLLER_URI);
+        String result = properties.getProperty(PravegaKafkaConfig.CONTROLLER_URI);
         if (result == null) {
-            result = props.getProperty("bootstrap.servers");
+            result = properties.getProperty("bootstrap.servers");
         }
-        if (result == null) {
-            if (defaultValue == null || defaultValue.trim().equals("")) {
-                throw new IllegalArgumentException("Properties does not contain server endpoint(s), " +
-                        "and default value is null/empty");
-            } else {
-                result = defaultValue;
-            }
+        if (result == null && defaultValue != null) {
+            result = defaultValue;
         }
         return result;
     }
 
     public String scope(String defaultValue) {
-        return props.getProperty(PravegaKafkaConfig.SCOPE, defaultValue);
+        return properties.getProperty(PravegaKafkaConfig.SCOPE, defaultValue);
     }
 
-    private Serializer loadSerde(String key) {
-        String serde = props.getProperty(key);
+    @VisibleForTesting
+    Serializer loadSerde(String key) {
+        String serde = properties.getProperty(key);
         if (serde != null) {
             if (serde.equals("org.apache.kafka.common.serialization.StringSerializer") ||
             serde.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
@@ -95,7 +97,7 @@ public class PravegaKafkaConfig {
         List<ProducerInterceptor<K, V>> ic = new ArrayList<ProducerInterceptor<K, V>>();
 
         // TODO: Support multiple producer interceptors?
-        String producerInterceptorClass = props.getProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
+        String producerInterceptorClass = properties.getProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
         if (producerInterceptorClass != null) {
             try {
                 ProducerInterceptor<K, V> interceptor =
@@ -111,15 +113,10 @@ public class PravegaKafkaConfig {
     }
 
     public String groupId(String defaultValue) {
-        return props.getProperty(ConsumerConfig.GROUP_ID_CONFIG, defaultValue);
+        return properties.getProperty(ConsumerConfig.GROUP_ID_CONFIG, defaultValue);
     }
 
     public String clientId(String defaultValue) {
-        return props.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
-    }
-
-    public List<ConsumerInterceptor> consumerInterceptors() {
-        // TODO: Implement
-        return new ArrayList<>();
+        return properties.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
     }
 }
