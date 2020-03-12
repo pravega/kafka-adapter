@@ -55,7 +55,7 @@ public class AdapterUsageBasicExamples {
         try (PravegaReader<String> reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
                 new PravegaKafkaConfig(producerConfig).serverEndpoints(), new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext());
+            assertEquals(message, reader.readNext(200));
         }
     }
 
@@ -85,7 +85,7 @@ public class AdapterUsageBasicExamples {
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
                 new PravegaKafkaConfig(producerConfig).serverEndpoints(),
                 new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext());
+            assertEquals(message, reader.readNext(200));
         }
     }
 
@@ -151,7 +151,7 @@ public class AdapterUsageBasicExamples {
         try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
                 new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext());
+            assertEquals(message, reader.readNext(200));
             System.out.format("Found expected message in in scope/stream %s/%s%n", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);
         }

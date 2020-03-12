@@ -282,7 +282,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     int countOfReadEvents = 0;
                     do {
                         try {
-                            event = reader.readNextEvent();
+                            event = reader.readNextEvent(500);
                             if (event.getEvent() != null) {
                                 log.trace("Found a non-null event");
                                 recordsToAdd.add(translateToConsumerRecord(stream, event));

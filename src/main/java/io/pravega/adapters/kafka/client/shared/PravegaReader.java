@@ -1,5 +1,6 @@
 package io.pravega.adapters.kafka.client.shared;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
@@ -15,7 +16,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,6 +35,8 @@ public class PravegaReader<T> implements AutoCloseable {
     private final String readerGroupName;
     private final String readerId;
 
+    @VisibleForTesting
+    @Setter(AccessLevel.PACKAGE)
     private EventStreamReader<T> reader;
     private ReaderGroupManager readerGroupManager;
 
@@ -77,14 +82,14 @@ public class PravegaReader<T> implements AutoCloseable {
                 .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
     }
 
-    public List<T> readAll() {
+    public List<T> readAll(long timeoutInMillis) {
         if (!isInitialized()) {
             init();
         }
         List<T> result = new ArrayList<>();
         EventRead<T> event = null;
         do {
-            event = reader.readNextEvent(1000);
+            event = reader.readNextEvent(timeoutInMillis);
             if (event.getEvent() != null) {
                 result.add(event.getEvent());
             }
@@ -92,18 +97,18 @@ public class PravegaReader<T> implements AutoCloseable {
         return result;
     }
 
-    public EventRead<T> readNextEvent() {
+    public EventRead<T> readNextEvent(long timeoutInMillis) {
         if (!isInitialized()) {
             init();
         }
-        return this.reader.readNextEvent(200);
+        return this.reader.readNextEvent(timeoutInMillis);
     }
 
-    public T tryReadNext() {
+    public T tryReadNext(long timeinMillis) {
         if (!isInitialized()) {
             init();
         }
-        EventRead<T> event = this.reader.readNextEvent(200);
+        EventRead<T> event = this.reader.readNextEvent(timeinMillis);
         if (event != null) {
             return event.getEvent();
 
@@ -112,8 +117,8 @@ public class PravegaReader<T> implements AutoCloseable {
         }
     }
 
-    public T readNext() {
-        T result = tryReadNext();
+    public T readNext(long timeinMillis) {
+        T result = tryReadNext(timeinMillis);
         if (result == null) {
             throw new IllegalStateException("No Event");
         }

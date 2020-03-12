@@ -59,7 +59,7 @@ public class TransactionExamples {
         // Assert
         try (PravegaReader<String> reader = new PravegaReader(scope, topic, controllerUri,
                 new JavaSerializer<String>(), consumerGroupId, clientId)) {
-            List<String> records = reader.readAll();
+            List<String> records = reader.readAll(1000);
             log.info("Read events: [{}]", records);
             assertEquals(2, records.size());
         }

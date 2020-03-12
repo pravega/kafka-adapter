@@ -95,7 +95,7 @@ public class CustomSerializationUsageExamples {
         try (PravegaReader<Person> reader = new PravegaReader<>(SCOPE_NAME, topic,
                 new PravegaKafkaConfig(producerConfig).serverEndpoints(), new PersonSerializer(),
                 UUID.randomUUID().toString(), "readerId")) {
-            Person readPerson = reader.readNext();
+            Person readPerson = reader.readNext(200);
             System.out.println("Read Person: " + readPerson);
             assertEquals("rsharda", PERSON_OBJ.getUserName());
         }

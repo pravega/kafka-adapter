@@ -99,7 +99,7 @@ public class AdapterUsageAdvancedExamples {
         // Finding out how many were really written
         try (PravegaReader reader = new PravegaReader(scopeName, topicName, controllerUri, new JavaSerializer<String>(),
                 "some-reader-group" + Math.random(), "some-reader-id")) {
-            while (reader.readNextEvent().getEvent() != null) {
+            while (reader.readNextEvent(500).getEvent() != null) {
                 actualCountOfItemsInStream++;
             }
         }

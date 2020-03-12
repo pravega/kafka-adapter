@@ -38,9 +38,9 @@ public class ReaderAndWriterUsageExamples {
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            assertEquals("Message - 1", reader.readNext());
-            assertEquals("Message - 2", reader.readNext());
-            assertEquals("Message - 3", reader.readNext());
+            assertEquals("Message - 1", reader.readNext(200));
+            assertEquals("Message - 2", reader.readNext(200));
+            assertEquals("Message - 3", reader.readNext(200));
         }
     }
 
@@ -69,14 +69,14 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                     readerGroupName, readerId1)) {
             for (int i = 0; i < 4; i++) {
-                System.out.println("Reader read message: " + reader.readNext());
+                System.out.println("Reader read message: " + reader.readNext(200));
             }
         }
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 readerGroupName, readerId2)) {
             for (int i = 0; i < 4; i++) {
-                System.out.println("A new reader read message: " + reader.readNext());
+                System.out.println("A new reader read message: " + reader.readNext(200));
             }
         }
     }
@@ -135,9 +135,9 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader<String> reader = new PravegaReader(scope, Arrays.asList(stream1, stream2), controllerUri,
                 new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            String readEvent1 = reader.readNext();
+            String readEvent1 = reader.readNext(200);
             System.out.format("Read event 1: [%s]%n", readEvent1);
-            String readEvent2 = reader.readNext();
+            String readEvent2 = reader.readNext(200);
             System.out.format("Read event 2: [%s]%n", readEvent2);
             assertEquals(writeEvent1, readEvent1);
             assertEquals(writeEvent2, readEvent2);
