@@ -1,11 +1,13 @@
 package io.pravega.adapters.kafka.client.producer;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.pravega.adapters.kafka.client.shared.Writer;
@@ -21,7 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -134,6 +138,62 @@ public class PravegaKafkaProducerTests {
     }
 
     @Test
+    public void sendWithCallbackInvokesCallback() {
+        String topic = "test-topic";
+        String message = "message to send";
+
+        Writer<String> mockWriter = mock(Writer.class);
+        when(mockWriter.writeEvent(message)).thenReturn(CompletableFuture.completedFuture(null));
+
+        Map<String, Writer<String>> writersByStream = new HashMap<>();
+        writersByStream.put("test-topic", mockWriter);
+
+        Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig(), writersByStream);
+
+        // No need to subscribe, we have already set writersByStream in the producer through constructor injection.
+
+        final AtomicInteger callbackCallCounter = new AtomicInteger(0);
+        producer.send(new ProducerRecord<>(topic, message), new Callback() {
+            @Override
+            public void onCompletion(RecordMetadata metadata, Exception exception) {
+                callbackCallCounter.incrementAndGet();
+            }
+        });
+        assertEquals(1, callbackCallCounter.get());
+    }
+
+    @Test
+    public void transactionSendReturnsNonNullRecordMetadata() throws ExecutionException, InterruptedException {
+        String topic = "test-topic";
+        String message = "message to send";
+
+        Writer<String> mockWriter = mock(Writer.class);
+        when(mockWriter.writeEvent(any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        Map<String, Writer<String>> writersByStream = new HashMap<>();
+        writersByStream.put("test-topic", mockWriter);
+
+        Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig(), writersByStream);
+
+        producer.initTransactions();
+        producer.beginTransaction();
+
+        // No need to subscribe, we have already set writersByStream in the producer through constructor injection.
+        Future<RecordMetadata> lastRecordMetadataFuture = null;
+        for (int i = 0; i < 5; i++) {
+            lastRecordMetadataFuture = producer.send(
+                    new ProducerRecord<String, String>(topic, message + "-" + i));
+        }
+        producer.commitTransaction();
+
+        producer.flush();
+        producer.close();
+
+        assertNotNull(lastRecordMetadataFuture.get());
+        assertEquals(topic, lastRecordMetadataFuture.get().topic());
+    }
+
+    @Test
     public void sendReturnsNullWhenWriterErrorsOut() throws ExecutionException, InterruptedException {
         String topic = "test-topic";
         String message = "message to send";
@@ -176,7 +236,7 @@ public class PravegaKafkaProducerTests {
     }
 
     @Test
-    public void flushAndCloseInvokesWritersFlush() throws Exception {
+    public void flushInvokesWritersFlush() throws Exception {
         String topic = "test-topic";
         String message = "message to send";
 
@@ -186,35 +246,30 @@ public class PravegaKafkaProducerTests {
 
         Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig(), writersByStream);
         producer.flush();
-        producer.close();
 
         verify(mockWriter, times(1)).flush();
-        verify(mockWriter, times(1)).close();
     }
 
     @Test
-    public void sendWithCallbackInvokesCallback() {
+    public void closeInvokesWritersClose() throws Exception {
         String topic = "test-topic";
         String message = "message to send";
 
         Writer<String> mockWriter = mock(Writer.class);
-        when(mockWriter.writeEvent(message)).thenReturn(CompletableFuture.completedFuture(null));
-
         Map<String, Writer<String>> writersByStream = new HashMap<>();
         writersByStream.put("test-topic", mockWriter);
 
         Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig(), writersByStream);
+        producer.close();
+        verify(mockWriter, times(1)).close();
 
-        // No need to subscribe, we have already set writersByStream in the producer through constructor injection.
+        reset(mockWriter);
+        producer.close(Duration.ofMillis(100));
+        verify(mockWriter, times(1)).close();
 
-        final AtomicInteger callbackCallCounter = new AtomicInteger(0);
-        producer.send(new ProducerRecord<>(topic, message), new Callback() {
-            @Override
-            public void onCompletion(RecordMetadata metadata, Exception exception) {
-                callbackCallCounter.incrementAndGet();
-            }
-        });
-        assertEquals(1, callbackCallCounter.get());
+        reset(mockWriter);
+        producer.close(200, TimeUnit.MILLISECONDS);
+        verify(mockWriter, times(1)).close();
     }
 
     private Properties prepareDummyMinimalConfig() {
