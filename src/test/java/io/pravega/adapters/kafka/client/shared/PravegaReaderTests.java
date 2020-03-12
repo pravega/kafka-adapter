@@ -18,7 +18,7 @@ public class PravegaReaderTests {
     @Test
     public void readsAreDelegatedToEventReader() {
         EventStreamReader<String> mockInternalReader = mock(EventStreamReader.class);
-        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(new FakeEventRead("test-message"));
+        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(new FakeEventRead<String>("test-message"));
 
         PravegaReader<String> reader = dummyReader();
         reader.setReader(mockInternalReader);
@@ -33,12 +33,12 @@ public class PravegaReaderTests {
 }
 
 @RequiredArgsConstructor
-class FakeEventRead implements EventRead<String> {
+class FakeEventRead<T> implements EventRead<T> {
 
-    private final String event;
+    private final T event;
 
     @Override
-    public String getEvent() {
+    public T getEvent() {
         return this.event;
     }
 
