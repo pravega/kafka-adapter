@@ -237,9 +237,6 @@ public class PravegaKafkaProducerTests {
 
     @Test
     public void flushInvokesWritersFlush() throws Exception {
-        String topic = "test-topic";
-        String message = "message to send";
-
         Writer<String> mockWriter = mock(Writer.class);
         Map<String, Writer<String>> writersByStream = new HashMap<>();
         writersByStream.put("test-topic", mockWriter);
