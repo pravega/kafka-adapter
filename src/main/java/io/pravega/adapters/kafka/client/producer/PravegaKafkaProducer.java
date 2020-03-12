@@ -1,5 +1,7 @@
 package io.pravega.adapters.kafka.client.producer;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.pravega.adapters.kafka.client.common.ChecksumMaker;
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import io.pravega.adapters.kafka.client.shared.Writer;
@@ -50,11 +52,15 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     public PravegaKafkaProducer(Properties configProperties) {
+        this(configProperties, new HashMap<>());
+    }
+
+    @VisibleForTesting
+    PravegaKafkaProducer(Properties configProperties, Map<String, Writer<V>> writers) {
         if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
             throw new IllegalArgumentException(String.format("Property [%s] is not set",
                     ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
         }
-
         properties = configProperties;
         PravegaKafkaConfig config = new PravegaKafkaConfig(properties);
 
@@ -65,7 +71,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         interceptors = new ProducerInterceptors<K, V>(new ArrayList<>());
         config.populateProducerInterceptors(interceptors);
 
-        writersByStream = new HashMap<>();
+        writersByStream = writers;
     }
 
     @Override
@@ -131,13 +137,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
         final V message = translateToPravegaMessage(record);
         CompletableFuture<RecordMetadata> cf = writer.writeEvent(message)
-                .exceptionally(ex -> {
-                    log.error("Writing event failed", ex);
-                    return null;
-                })
-                .thenApply(i -> {
-                    log.info("Done writing event message {} to stream {}", message, stream);
-                    return prepareRecordMetadata();
+                .handle((v, ex) -> {
+                    if (ex != null) {
+                        log.error("Writing event failed", ex);
+                        return null;
+                    } else {
+                        log.info("Done writing event message {} to stream {}", message, stream);
+                        return prepareRecordMetadata(record);
+                    }
                 });
 
         cf.handle((rm, t) -> {
@@ -153,10 +160,12 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         return cf;
     }
 
-    private RecordMetadata prepareRecordMetadata() {
+    private RecordMetadata prepareRecordMetadata(ProducerRecord<K, V> producerRecord) {
         // TODO: Note that Pravega doesn't return these values upon write, so we are returning dummy values.
-        return new RecordMetadata(null, -1, -1, System.currentTimeMillis(),
-                null, 0, 0);
+        return new RecordMetadata(new TopicPartition(producerRecord.topic(), -1), -1, -1,
+                System.currentTimeMillis(),
+                ChecksumMaker.computeCRC32Checksum(producerRecord.value().toString()),
+                0, 0);
     }
 
     private V translateToPravegaMessage(ProducerRecord<K, V> record) {
