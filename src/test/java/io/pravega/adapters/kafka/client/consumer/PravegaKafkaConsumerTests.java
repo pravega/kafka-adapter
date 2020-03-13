@@ -1,18 +1,25 @@
 package io.pravega.adapters.kafka.client.consumer;
 
-import io.pravega.adapters.kafka.client.shared.PravegaReader;
-
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
+import io.pravega.adapters.kafka.client.shared.Reader;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 
+import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class PravegaKafkaConsumerTests {
 
@@ -56,7 +63,7 @@ public class PravegaKafkaConsumerTests {
                 new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
         consumer.subscribe(Arrays.asList("topic-1", "topic-2"));
 
-        PravegaReader reusablePravegaReader = consumer.getReadersByStream().get("topic-2");
+        Reader reusablePravegaReader = consumer.getReadersByStream().get("topic-2");
 
         // Resubscribe with one of existing topics
         consumer.subscribe(Arrays.asList("topic-2", "topic-3"));
@@ -89,6 +96,122 @@ public class PravegaKafkaConsumerTests {
         PravegaKafkaConsumer<String, Object> consumer =
                 new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
         consumer.poll(1L);
+    }
+
+    @Test
+    public void testUnsupportedOperationsThrowExceptions() {
+        PravegaKafkaConsumer<String, Object> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.assign(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.assignment(),
+                e -> e instanceof UnsupportedOperationException);
+
+        Pattern pattern = null;
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.subscribe(pattern),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.subscribe(pattern, null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.seek(null, null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.seek(null, 1L),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.seekToBeginning(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.seekToEnd(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.committed(new TopicPartition("topic", 1)),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.metrics(),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.partitionsFor("topic"),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.partitionsFor("topic", null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.pause(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.paused(),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.resume(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.listTopics(),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.listTopics(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.offsetsForTimes(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.offsetsForTimes(null, null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.beginningOffsets(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.beginningOffsets(null, null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.endOffsets(null),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.endOffsets(null, null),
+                e -> e instanceof UnsupportedOperationException);
+    }
+
+    @Test
+    public void closeInvokesReaderClose() throws Exception {
+        PravegaKafkaConsumer<String, String> consumer = new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+
+        Reader<String> reader1 = mock(Reader.class);
+        Reader<String> reader2 = mock(Reader.class);
+        Map<String, Reader<String>> readers = new HashMap<>();
+        readers.put("topic-1", reader1);
+        readers.put("topic-2", reader2);
+        consumer.setReadersByStream(readers);
+
+        consumer.close();
+
+        verify(reader1, times(1)).close();
+        verify(reader2, times(1)).close();
     }
 
     private Properties prepareDummyCompleteConsumerConfig() {
