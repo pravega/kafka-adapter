@@ -9,11 +9,13 @@ import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Contains examples demonstrating the use of Kafka producer and serialization implementations of the the Kafka Adapter.
  */
+@Slf4j
 public class AdapterUsageBasicExamples {
 
     @Test
@@ -203,14 +206,14 @@ public class AdapterUsageBasicExamples {
 
     @Test
     public void testReceivesEmptyMessagesOnPollWhenNoEventsPresent() {
-        /// Keeping scope and topic names random to eliminate the chances of it already being present.
+        // Keeping scope and topic names random to eliminate the chances of it already being present.
         String scopeName = "multiple-messages-" + Math.random();
         String topicName = "test-topic-" + Math.random();
         String controllerUri = "tcp://localhost:9090";
 
         // First let's ensure that the scope and topic are created
         try (PravegaWriter writer = new PravegaWriter(scopeName, topicName, controllerUri,
-                new JavaSerializer<String>())) {
+                new JavaSerializer<String>(), 1)) {
             writer.init();
         }
 
@@ -228,5 +231,51 @@ public class AdapterUsageBasicExamples {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
             assertEquals(0, records.count());
         }
+    }
+
+    @Test
+    public void testSendsAndReceivesMessagesFromStreamsContainingMultipleSegments() {
+        // Keeping scope and topic names random to eliminate the chances of it already being present.
+        String scopeName = "multistream-" + Math.random();
+        String topicName = "test-topic-" + Math.random();
+        String controllerUri = "tcp://localhost:9090";
+
+        // Produce events
+        Properties producerConfig = new Properties();
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, controllerUri);
+        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfig.put(PravegaKafkaConfig.SCOPE, scopeName);
+        producerConfig.put(PravegaKafkaConfig.NUM_SEGMENTS, "3");
+
+        try (Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig)) {
+            for (int i = 0; i < 5; i++) {
+                ProducerRecord<String, String> producerRecord =
+                        new ProducerRecord<>(topicName, 1, "test-key", "message: " + i);
+                pravegaKafkaProducer.send(producerRecord);
+            }
+            pravegaKafkaProducer.flush();
+        }
+
+        Properties consumerConfig = new Properties();
+        consumerConfig.put("bootstrap.servers", controllerUri);
+        consumerConfig.put("group.id", UUID.randomUUID().toString());
+        consumerConfig.put("client.id", "your_client_id");
+        consumerConfig.put("auto.offset.reset", "earliest");
+        consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        consumerConfig.put("pravega.scope", scopeName);
+
+        try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
+            consumer.subscribe(Arrays.asList(topicName));
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+            assertEquals(5, records.count());
+            Iterator<ConsumerRecord<String, String>> iterator = records.iterator();
+            while (iterator.hasNext()) {
+                ConsumerRecord<String, String> record = iterator.next();
+                log.info("Read event message: {}", record.value());
+            }
+        }
+
     }
 }

@@ -19,32 +19,32 @@ public class PravegaWriterTests {
 
         assertThrows("NullPointerException did not occur.",
                 () -> new PravegaWriter<String>(null, "test-stream", "dummy-controller-uri",
-                        new JavaSerializer<String>()),
+                        new JavaSerializer<String>(), 1),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
                 () -> new PravegaWriter<String>(null, "test-stream", "dummy-controller-uri",
-                        new JavaSerializer<String>()),
+                        new JavaSerializer<String>(), 1),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
                 () -> new PravegaWriter<String>("test-scope", null, "dummy-controller-uri",
-                        new JavaSerializer<String>()),
+                        new JavaSerializer<String>(), 1),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
                 () -> new PravegaWriter<String>("test-scope", "test-stream", null,
-                        new JavaSerializer<String>()),
+                        new JavaSerializer<String>(), 1),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
                 () -> new PravegaWriter<String>("test-scope", "test-stream",
-                        "dummy-controller-uri", null),
+                        "dummy-controller-uri", null, 1),
                 e -> e instanceof NullPointerException);
     }
 
     private PravegaWriter prepareDummy() {
         return new PravegaWriter("test-scope", "test-stream",
-                "dummy-controller-uri", new JavaSerializer<String>());
+                "dummy-controller-uri", new JavaSerializer<String>(), 1);
     }
 }

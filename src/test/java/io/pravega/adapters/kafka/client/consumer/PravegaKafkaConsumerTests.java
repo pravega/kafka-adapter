@@ -195,6 +195,10 @@ public class PravegaKafkaConsumerTests {
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.endOffsets(null, null),
                 e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.wakeup(),
+                e -> e instanceof UnsupportedOperationException);
     }
 
     @Test

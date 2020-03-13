@@ -51,6 +51,8 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
+    private final int numSegments;
+
     public PravegaKafkaProducer(Properties configProperties) {
         this(configProperties, new HashMap<>());
     }
@@ -67,6 +69,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         controllerUri = config.serverEndpoints();
         scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
         serializer = config.serializer();
+        numSegments = config.numSegments();
 
         interceptors = new ProducerInterceptors<K, V>(new ArrayList<>());
         config.populateProducerInterceptors(interceptors);
@@ -131,7 +134,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
             writer = this.writersByStream.get(stream);
 
         } else {
-            writer = new PravegaWriter(scope, stream, controllerUri, serializer);
+            writer = new PravegaWriter(scope, stream, controllerUri, serializer, numSegments);
             this.writersByStream.putIfAbsent(stream, writer);
         }
 
@@ -142,7 +145,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
                         log.error("Writing event failed", ex);
                         return null;
                     } else {
-                        log.info("Done writing event message {} to stream {}", message, stream);
+                        log.trace("Write event message {} to stream {}", message, stream);
                         return prepareRecordMetadata(record);
                     }
                 });

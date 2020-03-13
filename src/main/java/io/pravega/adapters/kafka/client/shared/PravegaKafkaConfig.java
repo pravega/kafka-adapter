@@ -34,6 +34,8 @@ public class PravegaKafkaConfig {
 
     public static final String CONTROLLER_URI = "pravega.controller.uri";
 
+    public static final String NUM_SEGMENTS = "pravega.segments.count";
+
     public static final String DEFAULT_SCOPE = "migrated-from-kafka";
 
     @VisibleForTesting
@@ -118,5 +120,19 @@ public class PravegaKafkaConfig {
 
     public String clientId(String defaultValue) {
         return properties.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
+    }
+
+    public int numSegments() {
+        String value = properties.getProperty(PravegaKafkaConfig.NUM_SEGMENTS);
+        int result = -1;
+        if (value != null) {
+            try {
+                result = Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid format", e);
+                // ignore
+            }
+        }
+        return result;
     }
 }

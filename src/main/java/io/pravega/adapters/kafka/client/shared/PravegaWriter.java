@@ -32,6 +32,8 @@ public class PravegaWriter<T> implements Writer<T> {
     @NonNull
     private final Serializer<T> serializer;
 
+    private final Integer numSegments;
+
     private StreamManager streamManager;
     private EventStreamClientFactory clientFactory;
     private EventStreamWriter<T> writer;
@@ -61,7 +63,7 @@ public class PravegaWriter<T> implements Writer<T> {
         }
 
         boolean isStreamCreated = streamManager.createStream(scope, stream, StreamConfiguration.builder()
-                .scalingPolicy(ScalingPolicy.fixed(1))
+                .scalingPolicy(ScalingPolicy.fixed(numSegments.intValue() > 0 ? numSegments.intValue() : 1))
                 .build());
 
         if (isStreamCreated) {

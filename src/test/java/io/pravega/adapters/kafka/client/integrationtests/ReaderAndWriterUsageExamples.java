@@ -29,7 +29,7 @@ public class ReaderAndWriterUsageExamples {
         String controllerUri = "tcp://localhost:9090";
 
         try (PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri,
-                new JavaSerializer<String>())) {
+                new JavaSerializer<String>(), 1)) {
             writer.writeEvent("Message - 1")
                     .thenRun(() -> writer.writeEvent("Message - 2"))
                     .thenRun(() -> writer.writeEvent("Message - 3"))
@@ -51,7 +51,7 @@ public class ReaderAndWriterUsageExamples {
         String controllerUri = "tcp://localhost:9090";
 
         try (PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri,
-                new JavaSerializer<String>())) {
+                new JavaSerializer<String>(), 1)) {
             for (int i = 0; i < 10; i++) {
                 String message = "Message: " + i;
                 writer.writeEvent(message).join();
