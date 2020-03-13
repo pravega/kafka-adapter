@@ -8,6 +8,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import kafka.utils.MockTime;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Demonstrates a basic usage of EmbeddedKafkaCluster.
  */
+@Slf4j
 public class EmbeddedKafkaClusterUsageExamples {
 
     @ClassRule
@@ -38,10 +40,10 @@ public class EmbeddedKafkaClusterUsageExamples {
     @BeforeClass
     public static void createTopics() throws InterruptedException {
         KAFKA_CLUSTER.createTopic("test.topic.1");
-        System.out.println("Done creating topic 1");
+        log.info("Done creating topic 1");
 
         KAFKA_CLUSTER.createTopic("test.topic.2");
-        System.out.println("Done creating topic 2");
+        log.info("Done creating topic 2");
     }
 
     @Test
@@ -95,7 +97,7 @@ public class EmbeddedKafkaClusterUsageExamples {
 
         // Produce records
         KafkaProducer<String, String> producer = new KafkaProducer<>(producerConfig);
-        System.out.println("Done creating producer");
+        log.info("Done creating producer");
 
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>(topic, 1, "test-key", "test-value");
@@ -103,7 +105,7 @@ public class EmbeddedKafkaClusterUsageExamples {
         Future<RecordMetadata> recordMetadataFuture = producer.send(producerRecord);
         RecordMetadata recordMetadata = recordMetadataFuture.get();
 
-        System.out.println("Record metadata: " + recordMetadata);
+        log.info("Record metadata: {}", recordMetadata);
     }
 
     @Test
@@ -116,7 +118,7 @@ public class EmbeddedKafkaClusterUsageExamples {
         producerConfig.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, DefaultPartitioner.class);
 
         FakeKafkaProducer<String, String> kafkaProducer = new FakeKafkaProducer<>(producerConfig);
-        System.out.println("Done creating Kafka producer");
+        log.info("Done creating Kafka producer");
 
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>("test.topic.1", 1, "test-key", "test-value");

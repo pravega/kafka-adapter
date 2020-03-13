@@ -16,10 +16,12 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+@Slf4j
 public class ReaderAndWriterUsageExamples {
 
     @Test
@@ -55,7 +57,7 @@ public class ReaderAndWriterUsageExamples {
             for (int i = 0; i < 10; i++) {
                 String message = "Message: " + i;
                 writer.writeEvent(message).join();
-                System.out.println("Wrote message: " + message);
+                log.info("Wrote message: {}", message);
             }
         }
         // If we didn't use the same readerGroupName for both the readers, reader 2 would start from the first event,
@@ -69,14 +71,14 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                     readerGroupName, readerId1)) {
             for (int i = 0; i < 4; i++) {
-                System.out.println("Reader read message: " + reader.readNext(200));
+                log.info("Reader read message: {}", reader.readNext(200));
             }
         }
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 readerGroupName, readerId2)) {
             for (int i = 0; i < 4; i++) {
-                System.out.println("A new reader read message: " + reader.readNext(200));
+                log.info("A new reader read message: {}", reader.readNext(200));
             }
         }
     }
@@ -99,23 +101,23 @@ public class ReaderAndWriterUsageExamples {
 
         @Cleanup
         StreamManager streamManager = StreamManager.create(clientConfig);
-        System.out.println("Created a stream manager");
+        log.info("Created a stream manager");
 
         // Create scope
         streamManager.createScope(scope);
-        System.out.format("Created a scope [%s]%n", scope);
+        log.info("Created a scope [{}]", scope);
 
         // Create stream 1
         streamManager.createStream(scope, stream1, StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(numSegments))
                 .build());
-        System.out.format("Created stream1 with name [%s]%n", stream1);
+        log.info("Created stream1 with name [{}]", stream1);
 
         // Create stream 2
         streamManager.createStream(scope, stream2, StreamConfiguration.builder()
                 .scalingPolicy(ScalingPolicy.fixed(numSegments))
                 .build());
-        System.out.format("Created stream2 with name [%s]%n", stream2);
+        log.info("Created stream2 with name [{}]", stream2);
 
         EventStreamClientFactory clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
 
@@ -123,22 +125,22 @@ public class ReaderAndWriterUsageExamples {
         EventStreamWriter<String> writer1 = clientFactory.createEventWriter(stream1,
                 new JavaSerializer<String>(), EventWriterConfig.builder().build());
         writer1.writeEvent(writeEvent1).join();
-        System.out.format("Done writing event 1 = [%s] to stream 1 = [%s]%n", writeEvent1, stream1);
+        log.info("Done writing event 1 = [{}] to stream 1 = [{}]", writeEvent1, stream1);
 
         @Cleanup
         EventStreamWriter<String> writer2 = clientFactory.createEventWriter(stream2,
                 new JavaSerializer<String>(), EventWriterConfig.builder().build());
         writer2.writeEvent(writeEvent2).join();
-        System.out.format("Done writing event 2 = [%s] to stream 2 = [%s]%n", writeEvent2, stream2);
+        log.info("Done writing event 2 = [{}] to stream 2 = [{}]", writeEvent2, stream2);
 
         // Act and assert
         try (PravegaReader<String> reader = new PravegaReader(scope, Arrays.asList(stream1, stream2), controllerUri,
                 new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
             String readEvent1 = reader.readNext(200);
-            System.out.format("Read event 1: [%s]%n", readEvent1);
+            log.info("Read event 1: [{}]", readEvent1);
             String readEvent2 = reader.readNext(200);
-            System.out.format("Read event 2: [%s]%n", readEvent2);
+            log.info("Read event 2: [{}]", readEvent2);
             assertEquals(writeEvent1, readEvent1);
             assertEquals(writeEvent2, readEvent2);
         }

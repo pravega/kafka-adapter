@@ -38,6 +38,32 @@
     </module>
 
     <module name="TreeWalker">
+
+        <!-- No System.out -->
+        <module name="Regexp">
+            <property name="format" value="System\.out\.println" />
+            <property name="illegalPattern" value="true" />
+        </module>
+
+        <module name="Regexp">
+            <property name="format" value="System\.out\.format" />
+            <property name="illegalPattern" value="true" />
+        </module>
+
+        <!-- No System.err -->
+        <module name="Regexp">
+            <!-- . matches any character, so we need to escape it and use \. to match dots. -->
+            <property name="format" value="System\.err\.println" />
+            <property name="illegalPattern" value="true" />
+        </module>
+
+        <!-- No printStackTrace -->
+        <module name="Regexp">
+            <!-- . matches any character, so we need to escape it and use \. to match dots. -->
+            <property name="format" value="e\.printStackTrace\(\)" />
+            <property name="illegalPattern" value="true" />
+        </module>
+
         <module name="SuppressWarningsHolder" />
         <module name="SuppressWarnings"/>
         <!-- code cleanup -->
@@ -157,4 +183,6 @@
             <property name="suppressLoadErrors" value="false"/>
         </module>
     </module>
+
+
 </module>

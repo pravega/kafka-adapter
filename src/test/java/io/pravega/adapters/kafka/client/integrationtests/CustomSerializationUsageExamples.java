@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@Slf4j
 public class CustomSerializationUsageExamples {
 
     private static final String SCOPE_NAME = "CustomSerializationUsageExamples";
@@ -67,7 +69,7 @@ public class CustomSerializationUsageExamples {
             ConsumerRecords<String, Person> records = consumer.poll(Duration.ofSeconds(2));
             for (ConsumerRecord<String, Person> record : records) {
                 Person readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
+                log.info("Consumed a record containing value: " + readPerson);
                 assertEquals(PERSON_OBJ.getUserName(), readPerson.getUserName());
             }
         } finally {
@@ -96,7 +98,7 @@ public class CustomSerializationUsageExamples {
                 new PravegaKafkaConfig(producerConfig).serverEndpoints(), new PersonSerializer(),
                 UUID.randomUUID().toString(), "readerId")) {
             Person readPerson = reader.readNext(200);
-            System.out.println("Read Person: " + readPerson);
+            log.info("Read Person: {}", readPerson);
             assertEquals("rsharda", PERSON_OBJ.getUserName());
         }
     }
@@ -129,7 +131,7 @@ public class CustomSerializationUsageExamples {
             ConsumerRecords<String, Person> records = consumer.poll(Duration.ofSeconds(2));
             for (ConsumerRecord<String, Person> record : records) {
                 Person readPerson = record.value();
-                System.out.println("Consumed a record containing value: " + readPerson);
+                log.info("Consumed a record containing value: {}", readPerson);
                 assertEquals(PERSON_OBJ.getUserName(), readPerson.getUserName());
             }
         } finally {
@@ -143,11 +145,11 @@ public class CustomSerializationUsageExamples {
     private static void serializeThenDeserialize() {
         Person person =  new Person("Ravi", "Sharda", "rsharda");
         PersonSerializer serializer = new PersonSerializer();
-        System.out.println("Initial: " + person);
+        log.info("Initial: {}", person);
         ByteBuffer serialized = serializer.serialize(person);
         Person deserialized = serializer.deserialize(serialized);
-        System.out.println("De-serialized: " + deserialized);
-        System.out.println("Equals?" + person.equals(deserialized));
+        log.info("De-serialized: {}", deserialized);
+        log.info("Equals?" + person.equals(deserialized));
     }
 }
 

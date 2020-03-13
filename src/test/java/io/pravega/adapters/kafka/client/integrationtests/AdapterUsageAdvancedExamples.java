@@ -103,7 +103,7 @@ public class AdapterUsageAdvancedExamples {
                 actualCountOfItemsInStream++;
             }
         }
-        System.out.println("Actual no. of items in stream = " + actualCountOfItemsInStream);
+        log.debug("Actual no. of items in stream = {}", actualCountOfItemsInStream);
 
         // Consume events
         Properties consumerConfig = new Properties();
@@ -122,7 +122,7 @@ public class AdapterUsageAdvancedExamples {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(200));
             for (ConsumerRecord<String, String> record : records) {
                 String readMessage = record.value();
-                System.out.println("Consumed a record containing value: " + readMessage);
+                log.info("Consumed a record containing value: {}" + readMessage);
             }
             assertTrue(records.count() < actualCountOfItemsInStream);
         } finally {
@@ -181,26 +181,26 @@ public class AdapterUsageAdvancedExamples {
             ConsumerRecords<String, String> recordSet3 = consumer.poll(Duration.ofMillis(200));
 
             if (recordSet1 == null || recordSet1.isEmpty()) {
-                System.out.println("No data found in record set 1");
+                log.info("No data found in record set 1");
             } else {
                 for (ConsumerRecord<String, String> record : recordSet1) {
-                    System.out.println("Poll 1 - record: " + record.value());
+                    log.info("Poll 1 - record: {}", record.value());
                 }
             }
 
             if (recordSet2 == null || recordSet2.isEmpty()) {
-                System.out.println("No data found in record set 2");
+                log.info("No data found in record set 2");
             } else {
                 for (ConsumerRecord<String, String> record : recordSet2) {
-                    System.out.println("Poll 2 - record: " + record.value());
+                    log.info("Poll 2 - record: {}", record.value());
                 }
             }
 
             if (recordSet3 == null || recordSet3.isEmpty()) {
-                System.out.println("No data found in record set 3");
+                log.info("No data found in record set 3");
             } else {
                 for (ConsumerRecord<String, String> record : recordSet3) {
-                    System.out.println("Poll 3 - record: " + record.value());
+                    log.info("Poll 3 - record: {}", record.value());
                 }
             }
         } finally {
@@ -246,26 +246,26 @@ public class AdapterUsageAdvancedExamples {
         ConsumerRecords<String, String> recordSet3 = getConsumerRecords(topic, consumerConfig, Duration.ofMillis(400));
 
         if (recordSet1 == null || recordSet1.isEmpty()) {
-            System.out.println("No data found in record set 1");
+            log.info("No data found in record set 1");
         } else {
             for (ConsumerRecord<String, String> record : recordSet1) {
-                System.out.println("Poll 1 - record: " + record.value());
+                log.info("Poll 1 - record: {}", record.value());
             }
         }
 
         if (recordSet2 == null || recordSet2.isEmpty()) {
-            System.out.println("No data found in record set 2");
+            log.info("No data found in record set 2");
         } else {
             for (ConsumerRecord<String, String> record : recordSet2) {
-                System.out.println("Poll 2 - record: " + record.value());
+                log.info("Poll 2 - record: {}", record.value());
             }
         }
 
         if (recordSet3 == null || recordSet3.isEmpty()) {
-            System.out.println("No data found in record set 3");
+            log.info("No data found in record set 3");
         } else {
             for (ConsumerRecord<String, String> record : recordSet3) {
-                System.out.println("Poll 3 - record: " + record.value());
+                log.info("Poll 3 - record: {}", record.value());
             }
         }
     }
@@ -311,7 +311,7 @@ public class AdapterUsageAdvancedExamples {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(5000));
             for (ConsumerRecord<String, String> record : records) {
                 String readMessage = record.value();
-                System.out.println("Consumed a record containing value: " + readMessage);
+                log.info("Consumed a record containing value: {}", readMessage);
             }
             assertEquals(4, records.count());
         }

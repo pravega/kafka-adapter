@@ -111,7 +111,7 @@ public class AdapterUsageBasicExamples {
 
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
         assertNotNull(recordMedata.get());
-        System.out.println("Done producing message: " + message);
+        log.info("Done producing message: {}", message);
         pravegaKafkaProducer.close();
 
         // Consume events
@@ -129,7 +129,7 @@ public class AdapterUsageBasicExamples {
         try {
             ConsumerRecords<String, String> records = consumer.poll(1000);
             for (ConsumerRecord<String, String> record : records) {
-                System.out.println("Consumed a record containing value: " + record.value());
+                log.info("Consumed a record containing value: {}", record.value());
             }
         } finally {
             consumer.close();
@@ -155,7 +155,7 @@ public class AdapterUsageBasicExamples {
                 new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext(200));
-            System.out.format("Found expected message in in scope/stream %s/%s%n", PravegaKafkaConfig.DEFAULT_SCOPE,
+            log.info("Found expected message in in scope/stream {}/{}", PravegaKafkaConfig.DEFAULT_SCOPE,
                     topic);
         }
 
@@ -166,10 +166,10 @@ public class AdapterUsageBasicExamples {
         try {
             ConsumerRecords<String, String> records = consumer.poll(1000);
             if (records == null) {
-                System.out.println("Found no records in the current poll");
+                log.info("Found no records in the current poll");
             } else {
                 for (ConsumerRecord<String, String> record : records) {
-                    System.out.println("Consumed a record containing value: " + record.value());
+                    log.info("Consumed a record containing value: {}", record.value());
                 }
             }
         } finally {
@@ -196,9 +196,9 @@ public class AdapterUsageBasicExamples {
 
         pravegaKafkaProducer.send(producerRecord, (metadata, exception) -> {
             if (exception != null) {
-                System.out.println("Encountered an exception: " + exception.getMessage());
+                log.info("Encountered an exception: {}", exception.getMessage());
             }
-            System.out.println("Produced record metadata: " + metadata);
+            log.info("Produced record metadata: " + metadata);
             assertNotNull(metadata);
         });
         pravegaKafkaProducer.close();
