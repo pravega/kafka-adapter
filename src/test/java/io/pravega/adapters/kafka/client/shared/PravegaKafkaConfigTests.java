@@ -103,4 +103,30 @@ public class PravegaKafkaConfigTests {
         assertEquals("pravega://localhost:9090", config.serverEndpoints("pravega://localhost:9090"));
     }
 
+    @Test
+    public void numSegmentsReturnsNegativeValueIfConfigNotSpecified() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        assertEquals(-1, config.numSegments());
+    }
+
+    @Test
+    public void numSegmentsReturnsNegativeValueIfConfigIsNotInteger() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty(PravegaKafkaConfig.NUM_SEGMENTS, "Str");
+        assertEquals(-1, config.numSegments());
+
+        config.setProperty(PravegaKafkaConfig.NUM_SEGMENTS, "1.2");
+        assertEquals(-1, config.numSegments());
+    }
+
+    @Test
+    public void numSegmentsReturnsValueIfConfigIsValid() {
+        PravegaKafkaConfig config = new PravegaKafkaConfig(new Properties());
+        config.setProperty(PravegaKafkaConfig.NUM_SEGMENTS, "0");
+        assertEquals(0, config.numSegments());
+
+        config.setProperty(PravegaKafkaConfig.NUM_SEGMENTS, "1");
+        assertEquals(1, config.numSegments());
+    }
+
 }
