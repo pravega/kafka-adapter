@@ -22,7 +22,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PravegaReader<T> implements AutoCloseable {
+public class PravegaReader<T> implements Reader<T> {
 
     private final String scope;
 
@@ -82,6 +82,7 @@ public class PravegaReader<T> implements AutoCloseable {
                 .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
     }
 
+    @Override
     public List<T> readAll(long timeoutInMillis) {
         if (!isInitialized()) {
             init();
@@ -97,6 +98,7 @@ public class PravegaReader<T> implements AutoCloseable {
         return result;
     }
 
+    @Override
     public EventRead<T> readNextEvent(long timeoutInMillis) {
         if (!isInitialized()) {
             init();
@@ -104,6 +106,7 @@ public class PravegaReader<T> implements AutoCloseable {
         return this.reader.readNextEvent(timeoutInMillis);
     }
 
+    @Override
     public T tryReadNext(long timeinMillis) {
         if (!isInitialized()) {
             init();
@@ -117,6 +120,7 @@ public class PravegaReader<T> implements AutoCloseable {
         }
     }
 
+    @Override
     public T readNext(long timeinMillis) {
         T result = tryReadNext(timeinMillis);
         if (result == null) {

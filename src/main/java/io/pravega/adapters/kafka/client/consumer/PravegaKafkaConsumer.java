@@ -3,6 +3,7 @@ package io.pravega.adapters.kafka.client.consumer;
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
+import io.pravega.adapters.kafka.client.shared.Reader;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Serializer;
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -65,7 +67,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @VisibleForTesting
     @Getter(AccessLevel.PACKAGE)
-    private Map<String, PravegaReader> readersByStream = new HashMap<>();
+    @Setter(AccessLevel.PACKAGE)
+    private Map<String, Reader<V>> readersByStream = new HashMap<>();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -141,13 +144,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         log.debug("Subscribing to topics: {}, with callback {}", topics, callback);
         ensureNotClosed();
 
-        try {
-            this.readersByStream.forEach((k, v) -> v.close());
-        } catch (RuntimeException e) {
-            log.warn("Failed to close a reader", e);
-            // Ignore
-        }
-
+        closeAllReaders();
         readersByStream = new HashMap<>();
 
         int i = 0;
@@ -182,8 +179,18 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     public void unsubscribe() {
         ensureNotClosed();
         log.debug("Un-subscribing from all topics");
-        readersByStream.forEach((k, v) -> v.close());
+        closeAllReaders();
         readersByStream = new HashMap<>();
+    }
+
+    private void closeAllReaders() {
+        readersByStream.forEach((k, v) -> {
+            try {
+                v.close();
+            } catch (Exception e) {
+                log.warn("Unable to close the connection: {}", e.getMessage());
+            }
+        });
     }
 
     @Override
@@ -274,7 +281,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     log.debug("Reading data for topic/stream [{}/{}]", scope, i.getKey());
 
                     TopicPartition topicPartition = new TopicPartition(stream, -1);
-                    PravegaReader reader = i.getValue();
+                    Reader<V> reader = i.getValue();
 
                     List<ConsumerRecord<K, V>> recordsToAdd = new ArrayList<>();
                     EventRead<V> event = null;
@@ -494,12 +501,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void close() {
-        cleanup();
+        close(Duration.ofMillis(Long.MAX_VALUE));
     }
 
     @Override
     public void close(long timeout, TimeUnit unit) {
-        cleanup();
+        close(Duration.ofMillis(unit.toMillis(timeout)));
     }
 
     @Override
@@ -510,7 +517,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     private void cleanup() {
         log.debug("Closing the consumer");
         if (!isClosed.get()) {
-            readersByStream.forEach((k, v) -> v.close());
+            closeAllReaders();
             isClosed.set(true);
         }
     }
