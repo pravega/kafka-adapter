@@ -48,7 +48,26 @@ public abstract class PravegaKafkaConfig {
         return properties.getProperty(CommonClientConfigs.CLIENT_ID_CONFIG, defaultValue);
     }
 
-    protected Serializer instantiateSerde(@NonNull String fqClassName) {
+    protected Serializer instantiateSerde(@NonNull String key) {
+        Object serdeValue = this.properties.get(key);
+
+        if (serdeValue == null) {
+            throw new IllegalArgumentException(String.format("No property with name [%s] found", key));
+        }
+
+        if (serdeValue instanceof String) {
+            return instantiateSerdeFromClassName((String) serdeValue);
+        } else if (serdeValue instanceof Serializer) {
+            return (Serializer) serdeValue;
+        } else if (serdeValue instanceof Class) {
+            return instantiateSerdeFromClassName(((Class) serdeValue).getCanonicalName());
+        } else {
+            throw new IllegalArgumentException(
+                    String.format("Could not instantiate Serde from property key [%s]", key));
+        }
+    }
+
+    private Serializer instantiateSerdeFromClassName(@NonNull String fqClassName) {
         if (fqClassName.equals("org.apache.kafka.common.serialization.StringSerializer") ||
                 fqClassName.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
             return new JavaSerializer<String>();

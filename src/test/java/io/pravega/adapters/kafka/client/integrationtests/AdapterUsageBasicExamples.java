@@ -25,6 +25,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -79,13 +80,12 @@ public class AdapterUsageBasicExamples {
 
         Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig);
 
-        ProducerRecord<String, String> producerRecord =
-                new ProducerRecord<>(topic, 1, "test-key", message);
+        ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, 1, "test-key", message);
 
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
         assertNotNull(recordMedata.get());
 
-        try (PravegaReader reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic, controllerUri,
+        try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri,
                 new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext(200));
         }
@@ -135,6 +135,7 @@ public class AdapterUsageBasicExamples {
         }
     }
 
+    @Ignore
     @Test
     public void testConsumeOnly() {
         String topic = "tpmkc-0.11596792843929993";

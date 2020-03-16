@@ -3,6 +3,7 @@ package io.pravega.adapters.kafka.client.shared;
 import io.pravega.client.stream.Serializer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
 
@@ -12,9 +13,6 @@ import java.util.Properties;
 
 @Slf4j
 public class PravegaProducerConfig extends PravegaKafkaConfig {
-
-    public static final String VALUE_SERIALIZER =
-            org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 
     @Getter
     private final Serializer serializer;
@@ -27,12 +25,7 @@ public class PravegaProducerConfig extends PravegaKafkaConfig {
 
     public PravegaProducerConfig(Properties props) {
         super(props);
-        String valueSerializerFqcn = props.getProperty(VALUE_SERIALIZER);
-        if (valueSerializerFqcn == null || valueSerializerFqcn.trim().equals("")) {
-            throw new IllegalArgumentException("Value serializer not specified");
-        } else {
-            serializer = this.instantiateSerde(props.getProperty(VALUE_SERIALIZER));
-        }
+        serializer = this.instantiateSerde(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
         numSegments = this.getPravegaConfig().getNumSegments();
         interceptors = instantiateInterceptors(props);
     }
