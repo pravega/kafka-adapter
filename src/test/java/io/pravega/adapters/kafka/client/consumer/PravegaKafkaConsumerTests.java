@@ -1,7 +1,9 @@
 package io.pravega.adapters.kafka.client.consumer;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -199,11 +201,24 @@ public class PravegaKafkaConsumerTests {
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.wakeup(),
                 e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.committed(new HashSet<>()),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.committed(new TopicPartition("topic", 1), Duration.ofMillis(1000)),
+                e -> e instanceof UnsupportedOperationException);
+
+        assertThrows("Didn't encounter UnsupportedOperationException.",
+                () -> consumer.committed(new HashSet<>(), Duration.ofMillis(1000)),
+                e -> e instanceof UnsupportedOperationException);
     }
 
     @Test
     public void closeInvokesReaderClose() throws Exception {
-        PravegaKafkaConsumer<String, String> consumer = new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        PravegaKafkaConsumer<String, String> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
 
         Reader<String> reader1 = mock(Reader.class);
         Reader<String> reader2 = mock(Reader.class);
@@ -216,6 +231,42 @@ public class PravegaKafkaConsumerTests {
 
         verify(reader1, times(1)).close();
         verify(reader2, times(1)).close();
+    }
+
+    @Test
+    public void commitSyncOperationsSucceed() {
+
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void pollAfterClosedThrowsException() {
+        PravegaKafkaConsumer<String, String> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        consumer.close();
+        consumer.poll(1000);
+    }
+
+    @Test
+    public void invalidConfigRejectedDuringConstruction() {
+
+        assertThrows("Didn't encounter expected exception when bootstrap server was not specified.",
+                () -> {
+                    // Bootstrap server not configured
+                    Properties props = new Properties();
+                    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                            "io.pravega.client.stream.impl.JavaSerializer");
+                    new PravegaKafkaConsumer<String, String>(props);
+                },
+                e -> e instanceof IllegalArgumentException);
+
+        assertThrows("Didn't encounter exception when value deserializer wasn't specified.",
+                () -> {
+                    // Deserializer config not specified
+                    Properties props = new Properties();
+                    props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "whatever");
+                    new PravegaKafkaConsumer<String, String>(props);
+                },
+                e -> e instanceof IllegalArgumentException);
     }
 
     private Properties prepareDummyCompleteConsumerConfig() {

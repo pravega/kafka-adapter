@@ -2,7 +2,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
-import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import io.pravega.client.stream.impl.JavaSerializer;
@@ -38,16 +38,16 @@ public class AdapterUsageBasicExamples {
 
     @Test
     public void testProduceWithMinimalKafkaConfig() throws ExecutionException, InterruptedException {
-        Properties producerConfig = new Properties();
+        Properties props = new Properties();
 
         String topic = "tpmkc-" + Math.random();
         String message = "test-message-1";
 
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
-        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-        Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig);
+        Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(props);
 
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>(topic, 1, "test-key", message);
@@ -55,8 +55,8 @@ public class AdapterUsageBasicExamples {
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
         assertNotNull(recordMedata.get());
 
-        try (PravegaReader<String> reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                new PravegaKafkaConfig(producerConfig).serverEndpoints(), new JavaSerializer<String>(),
+        try (PravegaReader<String> reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic,
+                "tcp://localhost:9090", new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext(200));
         }
@@ -71,8 +71,8 @@ public class AdapterUsageBasicExamples {
         String controllerUri = "tcp://localhost:9090";
         String message = "test-message-1";
 
-        producerConfig.put(PravegaKafkaConfig.CONTROLLER_URI, controllerUri);
-        producerConfig.put(PravegaKafkaConfig.SCOPE, scope);
+        producerConfig.put(PravegaConfig.CONTROLLER_URI, controllerUri);
+        producerConfig.put(PravegaConfig.SCOPE, scope);
         producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9090");
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -85,8 +85,7 @@ public class AdapterUsageBasicExamples {
         Future<RecordMetadata> recordMedata = pravegaKafkaProducer.send(producerRecord);
         assertNotNull(recordMedata.get());
 
-        try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                new PravegaKafkaConfig(producerConfig).serverEndpoints(),
+        try (PravegaReader reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic, controllerUri,
                 new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext(200));
         }
@@ -151,11 +150,10 @@ public class AdapterUsageBasicExamples {
         consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
         // First let's make sure that the event is actually there in the stream.
-        try (PravegaReader reader = new PravegaReader(PravegaKafkaConfig.DEFAULT_SCOPE, topic,
-                new PravegaKafkaConfig(consumerConfig).serverEndpoints(), new JavaSerializer<String>(),
-                UUID.randomUUID().toString(), "readerId")) {
+        try (PravegaReader reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic,
+                bootstrapServers, new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
             assertEquals(message, reader.readNext(200));
-            log.info("Found expected message in in scope/stream {}/{}", PravegaKafkaConfig.DEFAULT_SCOPE,
+            log.info("Found expected message in in scope/stream {}/{}", PravegaConfig.DEFAULT_SCOPE,
                     topic);
         }
 
@@ -245,8 +243,8 @@ public class AdapterUsageBasicExamples {
         producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, controllerUri);
         producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerConfig.put(PravegaKafkaConfig.SCOPE, scopeName);
-        producerConfig.put(PravegaKafkaConfig.NUM_SEGMENTS, "3");
+        producerConfig.put(PravegaConfig.SCOPE, scopeName);
+        producerConfig.put(PravegaConfig.NUM_SEGMENTS, "3");
 
         try (Producer<String, String> pravegaKafkaProducer = new PravegaKafkaProducer<>(producerConfig)) {
             for (int i = 0; i < 5; i++) {

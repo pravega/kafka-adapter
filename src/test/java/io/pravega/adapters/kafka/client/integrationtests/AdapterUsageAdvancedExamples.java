@@ -28,7 +28,7 @@ public class AdapterUsageAdvancedExamples {
 
     @Test
     public void testSendThenReceiveMultipleMessagesFromSingleTopic() throws ExecutionException, InterruptedException {
-        String scopeName = "multiple-messages";
+        String scopeName = "one-topic-multiple-msgs" + Math.random();
         String topic = "test-topic-" + Math.random();
 
         Properties producerConfig = new Properties();
@@ -74,7 +74,7 @@ public class AdapterUsageAdvancedExamples {
 
     @Test
     public void testReceivesPartialSetOfMessagesUponTimeout() {
-        String scopeName = "multiple-messages";
+        String scopeName = "partial-messages" + Math.random();
         String topicName = "test-topic-" + Math.random();
         String controllerUri = "tcp://localhost:9090";
 

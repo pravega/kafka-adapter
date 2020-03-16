@@ -1,138 +1,64 @@
 package io.pravega.adapters.kafka.client.shared;
 
-import com.google.common.annotations.VisibleForTesting;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.impl.JavaSerializer;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerInterceptor;
-import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
 
-/**
- * Pravega-specific constants for adapter apps.
- */
+import java.util.Properties;
+
 @Slf4j
-@RequiredArgsConstructor
-public class PravegaKafkaConfig {
+public abstract class PravegaKafkaConfig {
 
-    public static final String VALUE_SERIALIZER = "value.serializer";
-    public static final String VALUE_DESERIALIZER = "value.deserializer";
+    @Getter
+    protected final PravegaConfig pravegaConfig;
 
-    public static final String SCOPE = "pravega.scope";
-
-    public static final String CONTROLLER_URI = "pravega.controller.uri";
-
-    public static final String NUM_SEGMENTS = "pravega.segments.count";
-
-    public static final String DEFAULT_SCOPE = "migrated-from-kafka";
-
-    @VisibleForTesting
-    @Getter(AccessLevel.PACKAGE)
+    @Getter(AccessLevel.PROTECTED)
     private final Properties properties;
 
-    public void setProperty(@NonNull String key, @NonNull String value) {
-        this.properties.setProperty(key, value);
-    }
-
-    public String serverEndpoints() {
-        return serverEndpoints(null);
-    }
-
-    public String serverEndpoints(String defaultValue) {
-        String result = properties.getProperty(PravegaKafkaConfig.CONTROLLER_URI);
-        if (result == null) {
-            result = properties.getProperty("bootstrap.servers");
+    public PravegaKafkaConfig(Properties props) {
+        if (props.getProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG) == null) {
+            throw new IllegalArgumentException(String.format("Property [%s] is not set",
+                    CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG));
         }
-        if (result == null && defaultValue != null) {
-            result = defaultValue;
-        }
-        return result;
+        properties = props;
+        pravegaConfig = PravegaConfig.getInstance(props);
     }
 
-    public String scope(String defaultValue) {
-        return properties.getProperty(PravegaKafkaConfig.SCOPE, defaultValue);
-    }
-
-    @VisibleForTesting
-    Serializer loadSerde(String key) {
-        String serde = properties.getProperty(key);
-        if (serde != null) {
-            if (serde.equals("org.apache.kafka.common.serialization.StringSerializer") ||
-            serde.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
-                return new JavaSerializer<String>();
-            } else {
-                try {
-                    return (Serializer) Class.forName(serde).newInstance();
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    log.error("Unable to instantiate serializer with name [{}]", serde, e);
-                    throw new IllegalStateException(e);
-                }
-            }
+    public String getServerEndpoints() {
+        if (pravegaConfig.getControllerUri() != null) {
+            return pravegaConfig.getControllerUri();
         } else {
-            // The default serializer
-            return new JavaSerializer<String>();
+            return this.properties.getProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG);
         }
     }
 
-    public Serializer deserializer() {
-        return loadSerde(VALUE_DESERIALIZER);
+    public String getScope() {
+        return pravegaConfig.getScope();
     }
 
-    public Serializer serializer() {
-        return loadSerde(VALUE_SERIALIZER);
-    }
-
-    @SuppressFBWarnings(value = "IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN", justification = "No choice here")
-    public <K, V> void populateProducerInterceptors(ProducerInterceptors<K, V> interceptors) {
-        List<ProducerInterceptor<K, V>> ic = new ArrayList<ProducerInterceptor<K, V>>();
-
-        // TODO: Support multiple producer interceptors?
-        String producerInterceptorClass = properties.getProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
-        if (producerInterceptorClass != null) {
-            try {
-                ProducerInterceptor<K, V> interceptor =
-                        (ProducerInterceptor) Class.forName(producerInterceptorClass).newInstance();
-                ic.add(interceptor);
-                log.debug("Adding interceptor [{}] to the producer interceptor list", interceptor);
-                interceptors = new ProducerInterceptors<K, V>(ic);
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                log.error("Unable to instantiate producer interceptor with name [{}]", producerInterceptorClass, e);
-                throw new IllegalStateException(e);
-            }
-        }
-    }
-
-    public String groupId(String defaultValue) {
-        return properties.getProperty(ConsumerConfig.GROUP_ID_CONFIG, defaultValue);
-    }
-
-    public String clientId(String defaultValue) {
+    public String getGroupId(String defaultValue) {
         return properties.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
     }
 
-    public int numSegments() {
-        String value = properties.getProperty(PravegaKafkaConfig.NUM_SEGMENTS);
-        int result = -1;
-        if (value != null) {
+    public String getClientId(String defaultValue) {
+        return properties.getProperty(CommonClientConfigs.CLIENT_ID_CONFIG, defaultValue);
+    }
+
+    protected Serializer instantiateSerde(@NonNull String fqClassName) {
+        if (fqClassName.equals("org.apache.kafka.common.serialization.StringSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
+            return new JavaSerializer<String>();
+        } else {
             try {
-                result = Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid format", e);
-                // ignore
+                return (Serializer) Class.forName(fqClassName).newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                log.error("Unable to instantiate serializer with name [{}]", fqClassName, e);
+                throw new IllegalStateException(e);
             }
         }
-        return result;
     }
 }

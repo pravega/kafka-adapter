@@ -2,7 +2,8 @@ package io.pravega.adapters.kafka.client.producer;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.adapters.kafka.client.common.ChecksumMaker;
-import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaWriter;
 import io.pravega.adapters.kafka.client.shared.Writer;
 import io.pravega.client.stream.Serializer;
@@ -21,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -36,8 +36,6 @@ import org.apache.kafka.common.errors.ProducerFencedException;
 
 @Slf4j
 public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
-
-    private final Properties properties;
 
     private final ProducerInterceptors<K, V> interceptors;
 
@@ -58,21 +56,14 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     @VisibleForTesting
-    PravegaKafkaProducer(Properties configProperties, Map<String, Writer<V>> writers) {
-        if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
-            throw new IllegalArgumentException(String.format("Property [%s] is not set",
-                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
-        }
-        properties = configProperties;
-        PravegaKafkaConfig config = new PravegaKafkaConfig(properties);
+    PravegaKafkaProducer(@NonNull final Properties configProperties, Map<String, Writer<V>> writers) {
+        PravegaProducerConfig config = new PravegaProducerConfig(configProperties);
 
-        controllerUri = config.serverEndpoints();
-        scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
-        serializer = config.serializer();
-        numSegments = config.numSegments();
-
-        interceptors = new ProducerInterceptors<K, V>(new ArrayList<>());
-        config.populateProducerInterceptors(interceptors);
+        controllerUri = config.getServerEndpoints();
+        scope = config.getScope() != null ? config.getScope() : PravegaConfig.DEFAULT_SCOPE;
+        serializer = config.getSerializer();
+        numSegments = config.getNumSegments();
+        interceptors = config.getInterceptors();
 
         writersByStream = writers;
     }

@@ -2,7 +2,6 @@ package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
-import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.utils.Person;
 import io.pravega.adapters.kafka.client.utils.PersonSerializer;
@@ -94,9 +93,8 @@ public class CustomSerializationUsageExamples {
         Future<RecordMetadata> recordMedata = producer.send(producerRecord);
         assertNotNull(recordMedata.get());
 
-        try (PravegaReader<Person> reader = new PravegaReader<>(SCOPE_NAME, topic,
-                new PravegaKafkaConfig(producerConfig).serverEndpoints(), new PersonSerializer(),
-                UUID.randomUUID().toString(), "readerId")) {
+        try (PravegaReader<Person> reader = new PravegaReader<>(SCOPE_NAME, topic, "tcp://localhost:9090",
+                new PersonSerializer(), UUID.randomUUID().toString(), "readerId")) {
             Person readPerson = reader.readNext(200);
             log.info("Read Person: {}", readPerson);
             assertEquals("rsharda", PERSON_OBJ.getUserName());

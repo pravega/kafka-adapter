@@ -4,6 +4,9 @@ import java.util.Properties;
 
 public class ConfigMaker {
 
+    public static final String STRING_SERIALIZER = "org.apache.kafka.common.serialization.StringSerializer";
+    public static final String STRING_DESERIALIZER = "org.apache.kafka.common.serialization.StringDeserializer";
+
     public static Properties makeProducerProperties(String scopeName, String controllerUri, String groupId,
                                              String clientId) {
         return makeTestProperties(scopeName, controllerUri, groupId, clientId, true);

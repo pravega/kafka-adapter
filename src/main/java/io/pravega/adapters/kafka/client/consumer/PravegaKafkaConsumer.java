@@ -1,7 +1,8 @@
 package io.pravega.adapters.kafka.client.consumer;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.pravega.adapters.kafka.client.shared.PravegaKafkaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaConfig;
+import io.pravega.adapters.kafka.client.shared.PravegaConsumerConfig;
 import io.pravega.adapters.kafka.client.shared.PravegaReader;
 import io.pravega.adapters.kafka.client.shared.Reader;
 import io.pravega.client.stream.EventRead;
@@ -74,37 +75,28 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final Serializer deserializer;
 
-    public PravegaKafkaConsumer(Properties kafkaConfigProperties) {
+    public PravegaKafkaConsumer(final Properties kafkaConfigProperties) {
         this(kafkaConfigProperties, null, null);
     }
 
-    public PravegaKafkaConsumer(Properties configProperties,
+    public PravegaKafkaConsumer(final Properties configProperties,
                                 Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-
-        if (configProperties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) == null) {
-            throw new IllegalArgumentException(String.format("Property [%s] is not set",
-                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG));
-        }
-
-        PravegaKafkaConfig config = new PravegaKafkaConfig(configProperties);
         if (keyDeserializer != null) {
-            config.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+            configProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                     keyDeserializer.getClass().getCanonicalName());
         }
+
         if (valueDeserializer != null) {
-            config.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+            configProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                     valueDeserializer.getClass().getCanonicalName());
         }
-        if (config.deserializer() == null) {
-            throw new IllegalArgumentException("Value deserializer is not set");
-        }
 
-        controllerUri = config.serverEndpoints();
-        scope = config.scope(PravegaKafkaConfig.DEFAULT_SCOPE);
-        deserializer = config.deserializer();
-        readerGroupId = config.groupId(UUID.randomUUID().toString());
-        readerId = config.clientId("readerId");
-
+        PravegaConsumerConfig config = new PravegaConsumerConfig(configProperties);
+        controllerUri = config.getServerEndpoints();
+        scope = config.getScope() != null ? config.getScope() : PravegaConfig.DEFAULT_SCOPE;
+        deserializer = config.getSerializer();
+        readerGroupId = config.getGroupId(UUID.randomUUID().toString());
+        readerId = config.getClientId("default_readerId");
         interceptors = (List) (new ConsumerConfig(configProperties)).getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
     }
