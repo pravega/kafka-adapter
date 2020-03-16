@@ -11,13 +11,15 @@ import java.util.Properties;
 @Builder
 public class PravegaConfig {
 
+    // Property keys
     public static final String CONTROLLER_URI = "pravega.controller.uri";
-
     public static final String SCOPE = "pravega.scope";
-
-    public static final String DEFAULT_SCOPE = "migrated-from-kafka";
-
     public static final String NUM_SEGMENTS = "pravega.segments.count";
+    public static final String READ_TIMEOUT = "pravega.read.timeout.ms";
+
+    // Values
+    public static final String DEFAULT_SCOPE = "migrated-from-kafka";
+    public static final int DEFAULT_READ_TIMEOUT = 200; // in milliseconds
 
     @Getter
     private final String scope;
@@ -27,6 +29,9 @@ public class PravegaConfig {
 
     @Getter
     private final int numSegments;
+
+    @Getter
+    private final int readTimeoutInMs;
 
     public static PravegaConfig getInstance(@NonNull Properties properties) {
         PravegaConfigBuilder builder = PravegaConfig.builder();
@@ -39,6 +44,7 @@ public class PravegaConfig {
             builder.scope = properties.getProperty(SCOPE);
         }
         builder.numSegments = numSegments(properties);
+        builder.readTimeoutInMs = readTimeout(properties);
         return builder.build();
     }
 
@@ -56,5 +62,14 @@ public class PravegaConfig {
         }
     }
 
+    public static int readTimeout(Properties properties) {
+        String timeout = properties.getProperty(READ_TIMEOUT);
+
+        if (timeout != null && timeout.matches("\\d+")) {
+            return Integer.parseInt(timeout);
+        } else {
+            return DEFAULT_READ_TIMEOUT;
+        }
+    }
 
 }

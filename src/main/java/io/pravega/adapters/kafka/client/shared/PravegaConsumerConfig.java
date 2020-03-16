@@ -13,8 +13,12 @@ public class PravegaConsumerConfig extends PravegaKafkaConfig {
     @Getter
     private final Serializer serializer;
 
+    @Getter
+    private final int readTimeoutInMs;
+
     public PravegaConsumerConfig(final Properties props) {
         super(props);
         serializer = this.instantiateSerde(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
+        readTimeoutInMs = this.getPravegaConfig().getReadTimeoutInMs();
     }
 }

@@ -66,6 +66,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final String readerId;
 
+    private final int readTimeout;
+
     @VisibleForTesting
     @Getter(AccessLevel.PACKAGE)
     @Setter(AccessLevel.PACKAGE)
@@ -99,6 +101,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         readerId = config.getClientId("default_readerId");
         interceptors = (List) (new ConsumerConfig(configProperties)).getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
+        readTimeout = config.getReadTimeoutInMs();
     }
 
 
@@ -281,7 +284,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     int countOfReadEvents = 0;
                     do {
                         try {
-                            event = reader.readNextEvent(500);
+                            event = reader.readNextEvent(readTimeout);
                             if (event.getEvent() != null) {
                                 log.trace("Found a non-null event");
                                 recordsToAdd.add(translateToConsumerRecord(stream, event));
@@ -304,6 +307,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 }
             });
         }
+        log.debug("" + recordsByPartition);
         log.debug("Returning results in {} ms. against a timeout of {} ms.",
                 System.currentTimeMillis() - startTimeInMillis, timeout);
         return new ConsumerRecords<K, V>(recordsByPartition);

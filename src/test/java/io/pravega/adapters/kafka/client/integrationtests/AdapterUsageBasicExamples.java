@@ -235,8 +235,8 @@ public class AdapterUsageBasicExamples {
     @Test
     public void testSendsAndReceivesMessagesFromStreamsContainingMultipleSegments() {
         // Keeping scope and topic names random to eliminate the chances of it already being present.
-        String scopeName = "multistream-" + Math.random();
-        String topicName = "test-topic-" + Math.random();
+        String scopeName = "multisegment-" + Math.random();
+        String topicName = "test-topic";
         String controllerUri = "tcp://localhost:9090";
 
         // Produce events
@@ -264,10 +264,11 @@ public class AdapterUsageBasicExamples {
         consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerConfig.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         consumerConfig.put("pravega.scope", scopeName);
+        consumerConfig.put(PravegaConfig.READ_TIMEOUT, "1000");
 
         try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
             consumer.subscribe(Arrays.asList(topicName));
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(5000));
             assertEquals(5, records.count());
             Iterator<ConsumerRecord<String, String>> iterator = records.iterator();
             while (iterator.hasNext()) {
@@ -275,6 +276,5 @@ public class AdapterUsageBasicExamples {
                 log.info("Read event message: {}", record.value());
             }
         }
-
     }
 }
