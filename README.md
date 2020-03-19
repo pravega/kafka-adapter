@@ -8,10 +8,10 @@ This adapter replaces `org.apache.kafka.clients.producer.KafkaProducer` and `org
 
 ```bash
 # Building the project
-$ ./gradlew build
+./gradlew build
 
 # Publishing the shadow jar with custom producer and consumer implementations to local maven reo. 
-$ ./gradlew publishShadowPublicationToMavenLocal
+./gradlew publishShadowPublicationToMavenLocal
 ```
 
 ## Usage
