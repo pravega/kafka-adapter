@@ -11,8 +11,10 @@ import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -113,8 +115,10 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public Set<TopicPartition> assignment() {
-        throw new UnsupportedOperationException(
-                "Manually assigning list of partitions to this serialization is not supported");
+        log.debug("assignment() hit");
+        return new HashSet<TopicPartition>(); // For Flink Kafka connector
+        //throw new UnsupportedOperationException(
+        // "Manually assigning list of partitions to this serialization is not supported");
     }
 
     /**
@@ -124,7 +128,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public Set<String> subscription() {
-        log.trace("Returning subscriptions");
+        log.debug("Returning subscriptions");
         return this.readersByStream.keySet();
     }
 
@@ -162,6 +166,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
+        log.debug("Subscribe with pattern {} and callback called", pattern);
         throw new UnsupportedOperationException("Subscribing to topic(s) matching specified pattern is not supported");
     }
 
@@ -190,7 +195,15 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void assign(Collection<TopicPartition> partitions) {
-        throw new UnsupportedOperationException("Assigning partitions not supported");
+        log.debug("assign called with partitions: {}", partitions);
+
+        final Collection<String> topics = new ArrayList<>();
+        partitions.stream().forEach(tp -> topics.add(tp.topic()));
+
+        log.debug("invoking subscribe for topics {}", topics);
+        this.subscribe(topics);
+        // Flink Kafka connector uses it.
+        // throw new UnsupportedOperationException("Assigning partitions not supported");
     }
 
     @Override
@@ -212,10 +225,9 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         }
 
         if (!isSubscribedToAnyTopic()) {
-            throw new IllegalStateException("This serialization is not subscribed to any topics/Pravega streams");
+            throw new IllegalStateException("This consumer is not subscribed to any topics/Pravega streams");
         }
 
-        // TODO: Implement the poll business logic
         // Here's are the key salient points on implementation:
         // - On each poll, serialization should return the records (representing) since last read position in the
         // segments.
@@ -267,13 +279,15 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
         // Check that we haven't crossed the timeout yet before starting the iteration again
         while (stopWatch.getTime() < timeout) {
+            long finalTimeout = timeout;
+            log.debug("Size of readersByStream={}", this.readersByStream.size());
             this.readersByStream.entrySet().stream().forEach(i -> {
                 ensureNotClosed();
 
                 // Check that we haven't crossed the timeout yet before initiating reads from the next reader.
-                if (stopWatch.getTime() < timeout) {
+                if (stopWatch.getTime() < finalTimeout) {
                     String stream = i.getKey();
-                    log.debug("Reading data for topic/stream [{}/{}]", scope, i.getKey());
+                    log.debug("Reading data for scope/stream [{}/{}]", scope, i.getKey());
 
                     TopicPartition topicPartition = new TopicPartition(stream, -1);
                     Reader<V> reader = i.getValue();
@@ -295,19 +309,24 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                         }
                     } while (event.getEvent() != null
                             && countOfReadEvents <= numRecordsPerReaderInEachIteration
-                            && stopWatch.getTime() < timeout);
+                            && stopWatch.getTime() < finalTimeout);
 
                     if (!recordsToAdd.isEmpty()) {
+                        log.debug("{} records to add", recordsToAdd.size());
                         if (recordsByPartition.containsKey(topicPartition)) {
                             recordsByPartition.get(topicPartition).addAll(recordsToAdd);
                         } else {
                             recordsByPartition.put(topicPartition, recordsToAdd);
                         }
+                    } else {
+                        log.debug("No records to add");
                     }
+                } else {
+                    log.debug("Read time already expired for stream: {}", i.getKey());
                 }
             });
         }
-        log.debug("" + recordsByPartition);
+
         log.debug("Returning results in {} ms. against a timeout of {} ms.",
                 System.currentTimeMillis() - startTimeInMillis, timeout);
         return new ConsumerRecords<K, V>(recordsByPartition);
@@ -426,27 +445,40 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        throw new UnsupportedOperationException("Not supported");
+        // throw new UnsupportedOperationException("Not supported");
+        return new HashMap<>();
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        throw new UnsupportedOperationException("Not supported");
+        return partitionsFor(topic, Duration.ofMillis(200));
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
-        throw new UnsupportedOperationException("Not supported");
+        // throw new UnsupportedOperationException("Not supported");
+
+        // This method is internally invoked by Flink Kafka adapter.
+        PartitionInfo info = new PartitionInfo(topic, 0, null, null, null);
+        List<PartitionInfo> result = new ArrayList<>();
+        result.add(info);
+        return result;
     }
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics() {
-        throw new UnsupportedOperationException("Not supported");
+        log.debug("listTopics invoked");
+        final Map<String, List<PartitionInfo>> result = new HashMap<>();
+        this.readersByStream.keySet().stream().forEach(topic ->
+                result.put(topic, Arrays.asList(
+                        new PartitionInfo(topic, 0, null, null, null))));
+        return result;
+        //throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
-        throw new UnsupportedOperationException("Not supported");
+        return listTopics();
     }
 
     @Override
@@ -520,7 +552,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void wakeup() {
-        throw new UnsupportedOperationException("Not supported");
+        // throw new UnsupportedOperationException("Not supported");
+        // Ignore. This method is invoked by Flink Kafka connector.
     }
 
     private void ensureNotClosed() {

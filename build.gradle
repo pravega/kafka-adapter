@@ -34,12 +34,12 @@ dependencies {
     compile group: "org.slf4j", name: "slf4j-api", version: "${slf4jApiVersion}"
     compile group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
     compile group: "org.projectlombok", name: "lombok", version: "${lombokVersion}"
-    compile group: "org.apache.kafka", name: "kafka_2.13", version: "${kafkaVersion}"
+    compile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}"
     compile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}"
     compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
 
     testCompile group: "junit", name: "junit", version: "${junitVersion}"
-    testCompile group: "org.apache.kafka", name: "kafka_2.13", version: "${kafkaVersion}", classifier: "test"
+    testCompile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}", classifier: "test"
     testCompile group: "org.apache.kafka", name: "kafka-streams", version: "${kafkaVersion}", classifier: "test"
     testCompile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}", classifier: "test"
     testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
@@ -70,15 +70,6 @@ test {
     // We don't want to execute these integrations tests as unit tests. These samples/tests are meant to be run
     // interactively targeting a separately running deployment. 
     exclude "io/pravega/adapters/kafka/client/integrationtests/**"
-}
-
-// Relocating Packages using shadow plugin
-shadowJar {
-    relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
-    relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
-
-    relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
-    relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
 }
 
 // Delombok sources.
@@ -116,4 +107,25 @@ jacocoTestReport {
         csv.enabled false
         html.destination file("${buildDir}/jacocoHtml")
     }
+}
+
+/**
+ * Create a fat jar with all dependencies including Kafka client in it. Here we are specifying to the shadowJar task
+ * that it should replace some of Kafka's classes with custom implementations that enables a Kafka client to talk to
+ * Pravega instead of Kafka.
+ */
+shadowJar {
+    // Replace Kafka Producer implementation
+    relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
+    relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
+
+    // Replace Kafka Consumer implementation
+    relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
+    relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
+
+    /* The following are needed for Flink Kafka Connector's usage of this adapter */
+
+    // Replace byte array deserializer.
+    relocate 'org.apache.kafka.common.serialization.ByteArrayDeserializer', 'org.apache.kafka.common.serialization.OriginalByteArrayDeserializer'
+    relocate 'io.pravega.adapters.kafka.client.shared.ByteArraySerializer', 'org.apache.kafka.common.serialization.ByteArrayDeserializer'
 }
