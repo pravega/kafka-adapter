@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import lombok.AccessLevel;
@@ -70,6 +71,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final int readTimeout;
 
+    private final int maxPollRecords;
+
     @VisibleForTesting
     @Getter(AccessLevel.PACKAGE)
     @Setter(AccessLevel.PACKAGE)
@@ -104,6 +107,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         interceptors = (List) (new ConsumerConfig(configProperties)).getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
         readTimeout = config.getReadTimeoutInMs();
+        maxPollRecords = config.getMaxPollRecords();
     }
 
 
@@ -265,6 +269,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         log.debug("read invoked with timeout: {} and numRecordsPerReaderInEachIteration: {}", timeout,
                 numRecordsPerReaderInEachIteration);
         long startTimeInMillis = System.currentTimeMillis();
+        AtomicInteger totalCountOfRecords = new AtomicInteger(0);
 
         assert timeout > 0;
         assert numRecordsPerReaderInEachIteration > 0;
@@ -276,11 +281,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         stopWatch.start();
 
         final Map<TopicPartition, List<ConsumerRecord<K, V>>> recordsByPartition = new HashMap<>();
+        log.debug("Size of readersByStream={}", this.readersByStream.size());
 
         // Check that we haven't crossed the timeout yet before starting the iteration again
         while (stopWatch.getTime() < timeout) {
             long finalTimeout = timeout;
-            log.debug("Size of readersByStream={}", this.readersByStream.size());
+
             this.readersByStream.entrySet().stream().forEach(i -> {
                 ensureNotClosed();
 
@@ -303,12 +309,14 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                                 log.trace("Found a non-null event");
                                 recordsToAdd.add(translateToConsumerRecord(stream, event));
                                 countOfReadEvents++;
+                                totalCountOfRecords.addAndGet(1);
                             }
                         } catch (ReinitializationRequiredException e) {
                             throw e;
                         }
                     } while (event.getEvent() != null
                             && countOfReadEvents <= numRecordsPerReaderInEachIteration
+                            && totalCountOfRecords.get() <= this.maxPollRecords
                             && stopWatch.getTime() < finalTimeout);
 
                     if (!recordsToAdd.isEmpty()) {
@@ -326,9 +334,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 }
             });
         }
-
-        log.debug("Returning results in {} ms. against a timeout of {} ms.",
-                System.currentTimeMillis() - startTimeInMillis, timeout);
+        log.debug("Returning {} records in {} ms. against a timeout of {} ms.",
+                totalCountOfRecords.get(), System.currentTimeMillis() - startTimeInMillis, timeout);
         return new ConsumerRecords<K, V>(recordsByPartition);
     }
 

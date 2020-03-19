@@ -123,7 +123,9 @@ shadowJar {
     relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
     relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
 
-    /* The following are needed for Flink Kafka Connector's usage of this adapter */
+    // ----------------------------------------------------------------------------
+    // The following are needed for Flink Kafka Connector's usage of this adapter
+    // ----------------------------------------------------------------------------
 
     // Replace byte array deserializer.
     relocate 'org.apache.kafka.common.serialization.ByteArrayDeserializer', 'org.apache.kafka.common.serialization.OriginalByteArrayDeserializer'
