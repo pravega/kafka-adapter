@@ -21,10 +21,4 @@ public class ByteArraySerializer implements Serializer<byte[]>, Serializable {
         serializedValue.get(result);
         return result;
     }
-
-    public static void main(String[] args) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        Class clazz = Class.forName("io.pravega.adapters.kafka.client.shared.ByteArraySerializer");
-        clazz.newInstance();
-        // ((clazz.getConstructors()[0].getName()));
-    }
 }
