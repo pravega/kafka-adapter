@@ -18,8 +18,19 @@ $ ./gradlew publishShadowPublicationToMavenLocal
 
 Add the following to your dependencies list. Replace the version if necessary. 
 
+Gradle: 
 ```
 compile group: "io.pravega.adapters.kafka", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
+```
+
+Maven: 
+```xml
+<dependency>
+    <groupId>io.pravega.adapters.kafka</groupId>
+    <artifactId>kafka-adapter</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <classifier>all</classifier>
+</dependency>
 ```
 
 # Code Analysis and Test Coverage
