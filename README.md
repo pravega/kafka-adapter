@@ -19,7 +19,7 @@ $ ./gradlew publishShadowPublicationToMavenLocal
 Add the following to your dependencies list. Replace the version if necessary. 
 
 Gradle: 
-```
+```groovy
 compile group: "io.pravega.adapters.kafka", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
 ```
 
