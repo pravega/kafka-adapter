@@ -10,8 +10,8 @@ This adapter replaces `org.apache.kafka.clients.producer.KafkaProducer` and `org
 # Building the project
 $ ./gradlew build
 
-# Publishing the shadow jar with custom producer and consumer implementations to local maven reo. 
-$ ./gradlew publishShadowPublicationToMavenLocal
+# Publishing the shadow jar with custom producer and consumer implementations to local maven repo. 
+$ ./gradlew :kafka-adapter:publishShadowPublicationToMavenLocal
 ```
 
 ## Usage
@@ -20,13 +20,13 @@ Add the following to your dependencies list. Replace the version if necessary.
 
 Gradle: 
 ```groovy
-compile group: "io.pravega.adapters.kafka", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
+compile group: "io.pravega.adapters.kafka-adapter", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
 ```
 
 Maven: 
 ```xml
 <dependency>
-    <groupId>io.pravega.adapters.kafka</groupId>
+    <groupId>io.pravega.adapters.kafka-adapter</groupId>
     <artifactId>kafka-adapter</artifactId>
     <version>1.0-SNAPSHOT</version>
     <classifier>all</classifier>
@@ -36,13 +36,13 @@ Maven:
 # Code Analysis and Test Coverage
 
 ```bash
-# Running Checkstyle
-$ ./gradlew checkstyleMain
-$ ./gradlew checkstyleTest
+# Running Checkstyle for the adapter module
+$ ./gradlew :kafka-adapter:checkstyleMain
+$ ./gradlew :kafka-adapter:checkstyleTest
 
-# Running Spotbugs
-$ ./gradlew spotbugsMain
-$ ./gradlew spotbugsTest
+# Running Spotbugs for the adapter module
+$ ./gradlew :kafka-adapter:spotbugsMain
+$ ./gradlew :kafka-adapter:spotbugsTest
 
 # Running all checks
 $ ./gradlew check
