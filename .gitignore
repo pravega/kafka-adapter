@@ -7,7 +7,7 @@
 # Package Files #
 *.jar
 # Override to Include the Gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.jar
+!adapter/gradle/wrapper/gradle-wrapper.jar
 
 *.war
 *.nar

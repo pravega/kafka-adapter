@@ -1,2 +1,4 @@
-rootProject.name = 'kafka-adapter'
+rootProject.name = 'pravega-kafka-adapter'
 
+include 'kafka-adapter'
+include 'kafka-adapter-samples'

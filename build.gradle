@@ -1,133 +1,198 @@
+
+buildscript {
+	repositories {
+		jcenter()
+		mavenCentral()
+	}
+}
+
 plugins {
-    id 'java'
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
-    id 'com.github.spotbugs' version '3.0.0'
-    id 'jacoco'
-    id "io.franzbecker.gradle-lombok" version "3.3.0"
+	id 'java'
+	id 'com.github.spotbugs' version '3.0.0'
+	id "io.franzbecker.gradle-lombok" version "3.3.0"
+	id "com.github.johnrengelman.shadow" version "5.2.0"
+	id 'jacoco'
 }
-
-group 'io.pravega.adapters.kafka'
-version '1.0-SNAPSHOT'
-
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
-repositories {
-    jcenter()
-    mavenCentral()
+/*allprojects {
+	apply plugin: "idea"
+	apply plugin: "eclipse"
+	apply plugin: "maven"
+}*/
+
+allprojects {
+	apply plugin: 'checkstyle'
+	apply plugin: 'io.franzbecker.gradle-lombok'
+	apply plugin: 'java'
+	apply plugin: 'maven'
+
+	repositories {
+		jcenter()
+		mavenCentral()
+		mavenLocal()
+	}
+
+	lombok {
+		version = lombokVersion
+	}
+
+	dependencies {
+		// Needed to have Lombok work with Gradle 5.x+. See https://github.com/rzwitserloot/lombok/issues/1945.
+		annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+		compileOnly("org.projectlombok:lombok:${lombokVersion}")
+
+		compile group: "org.slf4j", name: "slf4j-api", version: "${slf4jApiVersion}"
+		compile group: "org.apache.commons", name: "commons-lang3", version: "${commonsLangVersion}"
+		compile group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
+		compile group: "org.projectlombok", name: "lombok", version: "${lombokVersion}"
+		compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
+		testCompile group: "junit", name: "junit", version: "${junitVersion}"
+		testCompile group: "junit", name: "junit", version: "${junitVersion}"
+		testCompile group: "org.mockito", name: "mockito-core", version: "${mockitoVersion}"
+		testCompile group: "org.hamcrest", name: "hamcrest-all", version: "${hamcrestVersion}"
+	}
+
+	// Delombok sources.
+	task delombok(type: io.franzbecker.gradle.lombok.task.DelombokTask, dependsOn: compileJava) {
+		ext.outputDir = file("$buildDir/delombok")
+		outputs.dir(outputDir)
+		sourceSets.main.java.srcDirs.each {
+			inputs.dir(it)
+			args(it, "-d", outputDir)
+		}
+	}
+
+	checkstyle {
+		toolVersion '7.8.1'
+		configFile file("$rootDir/config/checkstyle.xml")
+	}
+
+	checkstyleMain {
+		source ='src/main/java'
+	}
+	checkstyleTest {
+		source ='src/test/java'
+	}
+
+	// Configure Spotbugs
+	spotbugs {
+		effort = "max"
+		includeFilter = file("$rootDir/config/spotbugs-include.xml")
+		excludeFilter = file("$rootDir/config/spotbugs-exclude.xml")
+	}
+
+	tasks.withType(com.github.spotbugs.SpotBugsTask) {
+		reports {
+			xml.enabled = false
+			html.enabled = true
+		}
+	}
 }
 
-apply plugin: "idea"
-apply plugin: "eclipse"
-apply plugin: "maven"
-apply plugin: "java"
-apply plugin: 'maven-publish'
-apply plugin: 'checkstyle'
+project (':kafka-adapter') {
+	apply plugin: 'com.github.johnrengelman.shadow' // Used to generate a fat jar with all dependencies
+	apply plugin: 'maven-publish' // Used to publish shadowJar generated fat jar to repo
 
-dependencies {
-    // Needed to have Lombok work with Gradle 5.x+. See https://github.com/rzwitserloot/lombok/issues/1945. 
-    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
-    compileOnly("org.projectlombok:lombok:$lombokVersion")
-    
-    compile group: "org.apache.commons", name: "commons-lang3", version: "${commonsLangVersion}"
-    compile group: "io.pravega", name: "pravega-client", version: "${pravegaVersion}+"
-    compile group: "io.pravega", name: "pravega-common", version: "${pravegaVersion}+"
-    compile group: "org.slf4j", name: "slf4j-api", version: "${slf4jApiVersion}"
-    compile group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
-    compile group: "org.projectlombok", name: "lombok", version: "${lombokVersion}"
-    compile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}"
-    compile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}"
-    compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
+	group "${groupId}"
+	version "${versionId}"
 
-    testCompile group: "junit", name: "junit", version: "${junitVersion}"
-    testCompile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}", classifier: "test"
-    testCompile group: "org.apache.kafka", name: "kafka-streams", version: "${kafkaVersion}", classifier: "test"
-    testCompile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}", classifier: "test"
-    testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
-    testCompile group: "org.hamcrest", name: "hamcrest-all", version: "${hamcrestVersion}"
-    testCompile group: "org.mockito", name: "mockito-core", version: "${mockitoVersion}"
+	dependencies {
+		compile group: "io.pravega", name: "pravega-client", version: "${pravegaVersion}"
+		compile group: "io.pravega", name: "pravega-common", version: "${pravegaVersion}"
+		compile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}"
+		compile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}"
+		compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
+
+		testCompile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}", classifier: "test"
+		testCompile group: "org.apache.kafka", name: "kafka-streams", version: "${kafkaVersion}", classifier: "test"
+		testCompile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}", classifier: "test"
+		testCompile group: "org.apache.kafka", name: "kafka-streams-test-utils", version: "${kafkaVersion}"
+	}
+
+	publishing {
+		publications {
+			shadow(MavenPublication) {
+				from components.java
+				artifact shadowJar
+			}
+			/*repositories {
+				maven {
+					url "http://nexus.abc.com/repository/stuff"
+					credentials {
+						username = "${System.env.NEXUS_USERNAME}"
+						password = "${System.env.NEXUS_PASSWORD}"
+					}
+				}
+			}*/
+		}
+	}
+
+	test {
+		// We don't want to execute these integrations tests as unit tests. These samples/tests are meant to be run
+		// interactively targeting a separately running deployment.
+		exclude "io/pravega/adapters/kafka/client/integrationtests/**"
+	}
+
+	jacoco {
+		toolVersion = "0.8.5"
+	}
+
+	jacocoTestReport {
+		dependsOn test
+		reports {
+			xml.enabled false
+			csv.enabled false
+			html.destination file("${buildDir}/jacocoHtml")
+		}
+	}
+
+	/**
+	 * Create a fat jar with all dependencies including Kafka client in it. Here we are specifying to the shadowJar task
+	 * that it should replace some of Kafka's classes with custom implementations that enables a Kafka client to talk to
+	 * Pravega instead of Kafka.
+	 */
+	shadowJar {
+		// `./gradlew shadowJar` command will output to build/libs/${artifactId}-${versionId}-${classifierId}
+		baseName("${artifactId}")
+		// group("${groupId}")
+		version("${versionId}")
+		classifier("${classifierId}")
+
+		// Replace Kafka Producer implementation
+		relocate 'org.apache.kafka.clients.producer.KafkaProducer',
+				'org.apache.kafka.clients.producer.OriginalKafkaProducer'
+		relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer',
+				'org.apache.kafka.clients.producer.KafkaProducer'
+
+		// Replace Kafka Consumer implementation
+		relocate 'org.apache.kafka.clients.consumer.KafkaConsumer',
+				'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
+		relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer',
+				'org.apache.kafka.clients.consumer.KafkaConsumer'
+
+		// ----------------------------------------------------------------------------
+		// The following are needed for Flink Kafka Connector's usage of this adapter
+		// ----------------------------------------------------------------------------
+
+		// Replace byte array deserializer.
+		relocate 'org.apache.kafka.common.serialization.ByteArrayDeserializer',
+				'org.apache.kafka.common.serialization.OriginalByteArrayDeserializer'
+		relocate 'io.pravega.adapters.kafka.client.shared.ByteArraySerializer',
+				'org.apache.kafka.common.serialization.ByteArrayDeserializer'
+	}
 }
 
-checkstyle {
-    toolVersion '7.8.1'
-    configFile file("$rootDir/config/checkstyle.xml")
-}
-checkstyleMain {
-    source ='src/main/java'
-}
-checkstyleTest {
-    source ='src/test/java'
-}
+project (':kafka-adapter-samples') {
 
-publishing {
-    publications {
-        shadow(MavenPublication) { publication ->
-            project.shadow.component(publication)
-        }
-    }
-}
+	dependencies {
+		// Kafka dependencies
+		// compile group: "org.apache.kafka", name: "kafka_2.13", version: "${kafkaVersion}"
+		// compile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}"
 
-test {
-    // We don't want to execute these integrations tests as unit tests. These samples/tests are meant to be run
-    // interactively targeting a separately running deployment. 
-    exclude "io/pravega/adapters/kafka/client/integrationtests/**"
-}
-
-// Delombok sources.
-task delombok(type: io.franzbecker.gradle.lombok.task.DelombokTask, dependsOn: compileJava) {
-    ext.outputDir = file("$buildDir/delombok")
-    outputs.dir(outputDir)
-    sourceSets.main.java.srcDirs.each {
-        inputs.dir(it)
-        args(it, "-d", outputDir)
-    }
-}
-
-// Configure Spotbugs
-spotbugs {
-    effort = "max"
-    includeFilter = file("$rootDir/config/spotbugs-include.xml")
-    excludeFilter = file("$rootDir/config/spotbugs-exclude.xml")
-}
-
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
-    reports {
-        xml.enabled = false
-        html.enabled = true
-    }
-}
-
-jacoco {
-    toolVersion = "0.8.5"
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.enabled false
-        csv.enabled false
-        html.destination file("${buildDir}/jacocoHtml")
-    }
-}
-
-/**
- * Create a fat jar with all dependencies including Kafka client in it. Here we are specifying to the shadowJar task
- * that it should replace some of Kafka's classes with custom implementations that enables a Kafka client to talk to
- * Pravega instead of Kafka.
- */
-shadowJar {
-    // Replace Kafka Producer implementation
-    relocate 'org.apache.kafka.clients.producer.KafkaProducer', 'org.apache.kafka.clients.producer.OriginalKafkaProducer'
-    relocate 'io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer', 'org.apache.kafka.clients.producer.KafkaProducer'
-
-    // Replace Kafka Consumer implementation
-    relocate 'org.apache.kafka.clients.consumer.KafkaConsumer', 'org.apache.kafka.clients.consumer.OriginalKafkaConsumer'
-    relocate 'io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer', 'org.apache.kafka.clients.consumer.KafkaConsumer'
-
-    // ----------------------------------------------------------------------------
-    // The following are needed for Flink Kafka Connector's usage of this adapter
-    // ----------------------------------------------------------------------------
-
-    // Replace byte array deserializer.
-    relocate 'org.apache.kafka.common.serialization.ByteArrayDeserializer', 'org.apache.kafka.common.serialization.OriginalByteArrayDeserializer'
-    relocate 'io.pravega.adapters.kafka.client.shared.ByteArraySerializer', 'org.apache.kafka.common.serialization.ByteArrayDeserializer'
+		// Kafka adapter dependency that replaces KafkaProducer and KafkaConsumer under the hoods.
+		compile group: "io.pravega.adapters.kafka-adapter", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
+		// compile project(':kafka-adapter')
+	}
 }

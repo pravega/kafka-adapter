@@ -50,26 +50,4 @@ public class PravegaProducerConfig extends PravegaKafkaConfig {
         }
         return result;
     }
-
-
-    /*@SuppressFBWarnings(value = "IP_PARAMETER_IS_DEAD_BUT_OVERWRITTEN", justification = "No choice here")
-    public <K, V> void populateProducerInterceptors(ProducerInterceptors<K, V> interceptors) {
-        List<ProducerInterceptor<K, V>> ic = new ArrayList<ProducerInterceptor<K, V>>();
-
-        // TODO: Support multiple producer interceptors?
-        String producerInterceptorClass = this.getProperties().getProperty(
-                org.apache.kafka.clients.producer.ProducerConfig.INTERCEPTOR_CLASSES_CONFIG);
-        if (producerInterceptorClass != null) {
-            try {
-                ProducerInterceptor<K, V> interceptor =
-                        (ProducerInterceptor) Class.forName(producerInterceptorClass).newInstance();
-                ic.add(interceptor);
-                log.debug("Adding interceptor [{}] to the producer interceptor list", interceptor);
-                interceptors = new ProducerInterceptors<K, V>(ic);
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                log.error("Unable to instantiate producer interceptor with name [{}]", producerInterceptorClass, e);
-                throw new IllegalStateException(e);
-            }
-        }
-    }*/
 }
