@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package org.example.kafkaclient.sampleapps;
+package io.pravega.kafka.sampleapps;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -19,10 +19,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 @Slf4j
-public class ProducerAppWithMinimalKafkaConfig {
+public class ProducerAppWithAsynchronousSend {
 
     public static void main(String... args) {
-        String bootstrapServers = "tcp://localhost:9090"; // Kafka server
+        String bootstrapServers = "localhost:32768"; // Kafka server
         // String bootstrapServers = "tcp://localhost:9090";
         String topic = "ProducerAppWithMinimalKafkaConfig";
         String message = "test message";

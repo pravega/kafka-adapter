@@ -8,22 +8,20 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package org.example.kafkaclient.sampleapps.serialization;
+package io.pravega.kafka.sampleapps.serialization;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serializer;
 
-import java.io.IOException;
-
-public class PersonDeserializer implements Deserializer<Person> {
+public class PersonSerializer implements Serializer<Person> {
 
     @Override
-    public Person deserialize(String topic, byte[] data) {
+    public byte[] serialize(String topic, Person data) {
+        byte[] result = null;
         ObjectMapper objectMapper = new ObjectMapper();
-        Person result = null;
         try {
-            result = objectMapper.readValue(data, Person.class);
-        } catch (IOException e) {
+            result = objectMapper.writeValueAsString(data).getBytes();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return result;

@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package org.example.kafkaclient.sampleapps;
+package io.pravega.kafka.sampleapps;
 
 import java.io.IOException;
 import java.io.InputStream;

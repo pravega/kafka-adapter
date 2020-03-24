@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package org.example.kafkaclient.sampleapps;
+package io.pravega.kafka.sampleapps;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -15,6 +15,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import io.pravega.kafka.shared.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -26,11 +27,9 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
-import static org.example.kafkaclient.shared.Utils.loadConfigFromClasspath;
-
 @Slf4j
 public class ProducerAndConsumerAppWithMinimalKafkaConfig {
-    private static final Properties APP_CONFIG = loadConfigFromClasspath("app.properties");
+    private static final Properties APP_CONFIG = Utils.loadConfigFromClasspath("app.properties");
 
     public static void main(String... args) {
         String topic = APP_CONFIG.getProperty("topic.name");

@@ -7,13 +7,13 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package org.example.kafkaclient.shared;
+package io.pravega.kafka.shared;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
-import org.example.kafkaclient.sampleapps.ProducerAndConsumerAppWithMinimalKafkaConfig;
+import io.pravega.kafka.sampleapps.ProducerAndConsumerAppWithMinimalKafkaConfig;
 
 @Slf4j
 public class Utils {

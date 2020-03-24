@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package org.example.kafkaclient.sampleapps.serialization;
+package io.pravega.kafka.sampleapps.serialization;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import io.pravega.kafka.shared.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -27,19 +28,16 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
-import static org.example.kafkaclient.shared.Utils.loadConfigFromClasspath;
-import static org.example.kafkaclient.shared.Utils.waitForEnterToContinue;
-
 @Slf4j
 public class AppWithCustomSerde {
-    private final static Properties APP_CONFIG = loadConfigFromClasspath("customserialization.properties");
+    private final static Properties APP_CONFIG = Utils.loadConfigFromClasspath("customserialization.properties");
 
     public static void main(String... args) {
         String topic = APP_CONFIG.getProperty("topic.name");
 
         Person person = new Person("Ravi", "Sharda", "rsharda");
 
-        waitForEnterToContinue("Press enter to proceed with sending a message to the server(s)");
+        Utils.waitForEnterToContinue("Press enter to proceed with sending a message to the server(s)");
         produce(topic, person);
 
         // waitForEnterToContinue("Press enter to proceed with receiving a message from the server(s)");

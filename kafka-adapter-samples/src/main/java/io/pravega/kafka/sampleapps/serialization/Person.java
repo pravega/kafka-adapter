@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  */
-package org.example.kafkaclient.sampleapps.serialization;
+package io.pravega.kafka.sampleapps.serialization;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
