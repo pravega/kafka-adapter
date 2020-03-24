@@ -7,3 +7,11 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 -->
+# Pravega Kafka Adapter Samples
+
+Examples in this module demonstrate the use of Kafka Adapter for making a Kafka producer/consumer 
+client write to/read from Pravega. 
+
+These examples are expected to be run interactively using the IDE (as of now). All examples are targeted
+to an externally running Kafka cluster, so you must run a Kafka cluster before configuring and executing these samples. 
+

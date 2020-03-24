@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 -->
-# Pravega Adapter for Kafka
+# Pravega Kafka Adapter
 
   * [Overview](#overview)
   * [How it Works](#how-it-works)
