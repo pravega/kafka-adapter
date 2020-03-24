@@ -10,5 +10,6 @@
  */
 rootProject.name = 'pravega-kafka-adapter'
 
-include 'kafka-adapter'
-include 'kafka-adapter-samples'
+include 'kafka-adapter',
+        'kafka-adapter-samples',
+        'kafka-adapter-samples:flink-kafka-connector-samples'

@@ -23,6 +23,7 @@ allprojects {
 	apply plugin: 'io.franzbecker.gradle-lombok'
 	apply plugin: 'java'
 	apply plugin: 'maven'
+	apply plugin: 'idea'
 	apply from: "$rootDir/gradle/rat.gradle"
 
 	repositories {
@@ -94,7 +95,7 @@ allprojects {
 	}
 }
 
-project (':kafka-adapter') {
+project ('kafka-adapter') {
 	apply plugin: 'com.github.johnrengelman.shadow' // Used to generate a fat jar with all dependencies
 	apply plugin: 'maven-publish' // Used to publish shadowJar generated fat jar to repo
 
@@ -210,8 +211,7 @@ project (':kafka-adapter') {
 	jar.enabled = false
 }
 
-project (':kafka-adapter-samples') {
-
+project ('kafka-adapter-samples') {
 	dependencies {
 		// Kafka dependencies
 		// compile group: "org.apache.kafka", name: "kafka_2.13", version: "${kafkaVersion}"
@@ -220,5 +220,18 @@ project (':kafka-adapter-samples') {
 		// Kafka adapter dependency that replaces KafkaProducer and KafkaConsumer under the hoods.
 		compile group: "io.pravega.adapters.kafka-adapter", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
 		// compile project(':kafka-adapter')
+	}
+}
+
+project ('kafka-adapter-samples:flink-kafka-connector-samples') {
+
+	apply plugin: "scala"
+	dependencies {
+		compile ("org.apache.flink:flink-connector-kafka_${flinkScalaVersion}:${flinkVersion}") {
+			exclude group: "org.apache.kafka", module: "kafka-clients"
+		}
+		compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
+		compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
+		compile "io.pravega.adapters.kafka-adapter:kafka-adapter:1.0-SNAPSHOT:all"
 	}
 }
