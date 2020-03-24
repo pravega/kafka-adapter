@@ -206,6 +206,31 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         });
     }
 
+    /**
+     * In Kafka, this method assigns the consumer to topic partitions, when using application-defined partition
+     * load balancing across consumers. (See the background below)
+     *
+     * In Pravega you cannot assign partitions (segments) manually. Pravega segments typically auto-scale up and down.
+     * So, in theory it should be OK to ignore calls to this method.
+     *
+     * However, this method also gets invoked internally by Flink Kafka connector, which does not invoke
+     * `subscribe(topics)`. To allow the connector to work, here we map it to subscribe() method.
+     *
+     * Background:
+     *
+     * (Source: Adapted from https://blog.newrelic.com/engineering/effective-strategies-kafka-topic-partitioning/
+     *
+     * Kafka balances load across the consumers in a consumer group. When a consumer leaves or join a consumer group
+     * the brokers automatically re-belance the partitions, which means all consumers drop existing partitions
+     * assigned to them and are reassigned partitions. If the application depends on the state associated with
+     * consumed data, it needs to drop that start and afresh.
+     *
+     * For applications that cannot drop the state associated with consumed data, theey can alternatively not use a
+     * consumer group and statically assign partitions to the consumer. In that case the application must balance the
+     * partitions by itself. This is where this method comes int picture.
+     *
+     * @param partitions topic partitions that specify which partitions of which topics are assigned to this consumer.
+     */
     @Override
     public void assign(Collection<TopicPartition> partitions) {
         log.debug("assign called with partitions: {}", partitions);
@@ -216,7 +241,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         log.debug("invoking subscribe for topics {}", topics);
         this.subscribe(topics);
         // Flink Kafka connector uses it.
-        // throw new UnsupportedOperationException("Assigning partitions not supported");
     }
 
     @Override
