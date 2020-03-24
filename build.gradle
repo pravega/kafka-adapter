@@ -1,18 +1,29 @@
+/**
+ * Copyright (c) Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
 plugins {
 	id 'java'
 	id 'com.github.spotbugs' version '3.0.0'
 	id "io.franzbecker.gradle-lombok" version "3.3.0"
 	id "com.github.johnrengelman.shadow" version "5.2.0"
 	id 'jacoco'
+	id "org.nosphere.apache.rat" version "0.6.0"
 }
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-subprojects {
+allprojects {
 	apply plugin: 'checkstyle'
 	apply plugin: 'io.franzbecker.gradle-lombok'
 	apply plugin: 'java'
 	apply plugin: 'maven'
+	apply from: "$rootDir/gradle/rat.gradle"
 
 	repositories {
 		jcenter()
