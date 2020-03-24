@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.pravega.adapters.kafka.client.shared.Writer;
+import io.pravega.adapters.kafka.client.dataaccess.Writer;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -27,7 +27,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.Test;
 
-import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
+import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

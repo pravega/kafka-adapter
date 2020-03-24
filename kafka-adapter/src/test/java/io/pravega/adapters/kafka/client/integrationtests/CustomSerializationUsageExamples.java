@@ -11,9 +11,9 @@ package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
-import io.pravega.adapters.kafka.client.shared.PravegaReader;
-import io.pravega.adapters.kafka.client.utils.Person;
-import io.pravega.adapters.kafka.client.utils.PersonSerializer;
+import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.testutils.Person;
+import io.pravega.adapters.kafka.client.testutils.PersonSerializer;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;

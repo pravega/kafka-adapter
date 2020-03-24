@@ -10,10 +10,10 @@
 package io.pravega.adapters.kafka.client.consumer;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.pravega.adapters.kafka.client.shared.PravegaConfig;
-import io.pravega.adapters.kafka.client.shared.PravegaConsumerConfig;
-import io.pravega.adapters.kafka.client.shared.PravegaReader;
-import io.pravega.adapters.kafka.client.shared.Reader;
+import io.pravega.adapters.kafka.client.config.PravegaConfig;
+import io.pravega.adapters.kafka.client.config.PravegaConsumerConfig;
+import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.dataaccess.Reader;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.ReinitializationRequiredException;
 import io.pravega.client.stream.Serializer;

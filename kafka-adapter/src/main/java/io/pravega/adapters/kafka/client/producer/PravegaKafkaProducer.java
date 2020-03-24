@@ -11,10 +11,10 @@ package io.pravega.adapters.kafka.client.producer;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.adapters.kafka.client.common.ChecksumMaker;
-import io.pravega.adapters.kafka.client.shared.PravegaConfig;
-import io.pravega.adapters.kafka.client.shared.PravegaProducerConfig;
-import io.pravega.adapters.kafka.client.shared.PravegaWriter;
-import io.pravega.adapters.kafka.client.shared.Writer;
+import io.pravega.adapters.kafka.client.config.PravegaConfig;
+import io.pravega.adapters.kafka.client.config.PravegaProducerConfig;
+import io.pravega.adapters.kafka.client.dataaccess.PravegaWriter;
+import io.pravega.adapters.kafka.client.dataaccess.Writer;
 import io.pravega.client.stream.Serializer;
 
 import java.time.Duration;

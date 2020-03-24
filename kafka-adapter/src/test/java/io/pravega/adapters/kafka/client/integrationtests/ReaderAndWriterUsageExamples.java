@@ -9,8 +9,8 @@
  */
 package io.pravega.adapters.kafka.client.integrationtests;
 
-import io.pravega.adapters.kafka.client.shared.PravegaReader;
-import io.pravega.adapters.kafka.client.shared.PravegaWriter;
+import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.dataaccess.PravegaWriter;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;

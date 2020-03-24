@@ -10,7 +10,7 @@
 package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.common.ChecksumMaker;
-import io.pravega.adapters.kafka.client.utils.FakeKafkaProducer;
+import io.pravega.adapters.kafka.client.testutils.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;

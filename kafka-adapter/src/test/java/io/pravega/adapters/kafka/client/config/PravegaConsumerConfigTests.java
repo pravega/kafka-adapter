@@ -7,9 +7,9 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.shared;
+package io.pravega.adapters.kafka.client.config;
 
-import io.pravega.adapters.kafka.client.utils.PersonSerializer;
+import io.pravega.adapters.kafka.client.testutils.PersonSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.junit.Test;
 
@@ -36,7 +36,7 @@ public class PravegaConsumerConfigTests {
         Properties props = new Properties();
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "dummy");
         props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+                "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
         PravegaConsumerConfig config = new PravegaConsumerConfig(props);
         assertEquals(PersonSerializer.class, config.getSerializer().getClass());
     }

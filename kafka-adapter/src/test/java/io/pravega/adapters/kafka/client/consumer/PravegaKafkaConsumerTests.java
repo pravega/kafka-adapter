@@ -18,13 +18,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.pravega.adapters.kafka.client.shared.Reader;
+import io.pravega.adapters.kafka.client.dataaccess.Reader;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 
-import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
+import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;

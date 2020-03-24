@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.utils;
+package io.pravega.adapters.kafka.client.testutils;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

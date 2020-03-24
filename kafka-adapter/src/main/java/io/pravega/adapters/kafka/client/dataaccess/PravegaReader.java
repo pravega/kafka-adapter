@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.shared;
+package io.pravega.adapters.kafka.client.dataaccess;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientConfig;

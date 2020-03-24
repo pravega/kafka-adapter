@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.shared;
+package io.pravega.adapters.kafka.client.dataaccess;
 
 import io.pravega.client.stream.EventPointer;
 import io.pravega.client.stream.EventRead;

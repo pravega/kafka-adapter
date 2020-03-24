@@ -7,17 +7,17 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.shared;
+package io.pravega.adapters.kafka.client.config;
 
-import io.pravega.adapters.kafka.client.utils.Person;
-import io.pravega.adapters.kafka.client.utils.PersonSerializer;
+import io.pravega.adapters.kafka.client.testutils.Person;
+import io.pravega.adapters.kafka.client.testutils.PersonSerializer;
 import io.pravega.client.stream.Serializer;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.junit.Test;
 
 import java.util.Properties;
 
-import static io.pravega.adapters.kafka.client.utils.TestUtils.assertThrows;
+import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -69,7 +69,7 @@ public class PravegaKafkaConfigTests {
     public void instantiateSerdeFromClassNameSucceeds() {
         Properties props = new Properties();
         props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "dummy_uri");
-        props.setProperty("some-key", "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+        props.setProperty("some-key", "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
 
         PravegaKafkaConfig config = new FakeKafkaConfig(props);
         Serializer<Person> serializer = config.instantiateSerde("some-key");

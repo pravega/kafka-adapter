@@ -7,17 +7,16 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package io.pravega.adapters.kafka.client.shared;
+package io.pravega.adapters.kafka.client.config;
 
-import io.pravega.adapters.kafka.client.utils.ConfigMaker;
+import io.pravega.adapters.kafka.client.testutils.ConfigMaker;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.internals.ProducerInterceptors;
 import org.junit.Test;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class PravegaProducerConfigTests {
 
@@ -70,8 +69,10 @@ public class PravegaProducerConfigTests {
         props.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
         props.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ConfigMaker.STRING_SERIALIZER);
         props.setProperty(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
-                "io.pravega.adapters.kafka.client.utils.FakeKafkaProducerInterceptor");
+                "io.pravega.adapters.kafka.client.testutils.FakeKafkaProducerInterceptor");
         PravegaProducerConfig config = new PravegaProducerConfig(props);
         ProducerInterceptors interceptors = config.getInterceptors();
+
+        // If the control reaches here, the test has succeeded.
     }
 }
