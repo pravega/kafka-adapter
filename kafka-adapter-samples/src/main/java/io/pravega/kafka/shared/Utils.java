@@ -33,11 +33,11 @@ public class Utils {
         try (InputStream input = ProducerAndConsumerAppWithMinimalKafkaConfig.class.getClassLoader()
                 .getResourceAsStream(propertiesFileName)) {
             if (input == null) {
-                log.error("Unable to find app.properties in classpath");
+                log.error("Unable to find {} in classpath", propertiesFileName);
             }
             props.load(input);
         } catch (IOException e) {
-            log.error("Unable to load app.properties from classpath");
+            log.error("Unable to load {} from classpath", propertiesFileName);
             throw new RuntimeException(e);
         }
         return props;
