@@ -116,10 +116,35 @@ project (':kafka-adapter') {
 
 	publishing {
 		publications {
+			// Enables: `./gradlew :kafka-adapter:publishShadowPublicationToMavenLocal`
 			shadow(MavenPublication) {
 				from components.java
 				artifact shadowJar
+
+				pom {
+					name = 'Pravega Kafka Adapter'
+				}
 			}
+
+			// Enables `./gradlew :kafka-adapter:publish`
+			lib(MavenPublication) {
+				from components.java
+				artifact shadowJar
+
+				pom {
+					name = 'Pravega Kafka Adapter'
+				}
+
+				// Repositories to publish to.
+				repositories {
+					mavenLocal()
+
+					// For now, publish to mavenLocal() only. We'll enable publishing to Maven at a later time.
+					// mavenCentral()
+				}
+			}
+
+
 		}
 	}
 
@@ -176,6 +201,13 @@ project (':kafka-adapter') {
 		relocate 'io.pravega.adapters.kafka.client.shared.ByteArraySerializer',
 				'org.apache.kafka.common.serialization.ByteArrayDeserializer'
 	}
+
+	tasks.build.dependsOn tasks.shadowJar
+
+	// We don't want the un-shadowed jar kafka-adapter-<version>.jar (without the classifer `all`) containing only the
+	// classes of this project. If we modify the following to true, we'd see
+	// `kafka-adapter\build\libs\kafka-adapter-<version>.jar` getting produced upon build (`./gradlew build`).
+	jar.enabled = false
 }
 
 project (':kafka-adapter-samples') {
