@@ -33,14 +33,8 @@ public class ProducerAndConsumerAppWithMultipleMessages {
         String message1 = "My important message 1";
         String message2 = "My important message 2";
 
-        System.out.println("Press enter to proceed with sending messages to the server(s)\n");
-        System.in.read();
-
         produce(topic, message1);
         produce(topic, message2);
-
-        System.out.println("\n\nPress enter to proceed with receiving messages from the server(s)\n");
-        System.in.read();
 
         consume(topic, Arrays.asList(message1, message2));
 

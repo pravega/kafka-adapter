@@ -28,10 +28,7 @@ public class ProducerAndConsumerAppWithMinimalKafkaConfig {
         String topic = APP_CONFIG.getProperty("topic.name");
         String message = "My important message 1";
 
-        waitForEnterToContinue("Press enter to proceed with sending a message to the server(s)");
         produce(topic, message);
-
-        waitForEnterToContinue("Press enter to proceed with receiving a message from the server(s)");
         consume(topic, message);
 
         log.info("Done. Exiting...");

@@ -1,11 +1,3 @@
-
-buildscript {
-	repositories {
-		jcenter()
-		mavenCentral()
-	}
-}
-
 plugins {
 	id 'java'
 	id 'com.github.spotbugs' version '3.0.0'
@@ -16,13 +8,7 @@ plugins {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-/*allprojects {
-	apply plugin: "idea"
-	apply plugin: "eclipse"
-	apply plugin: "maven"
-}*/
-
-allprojects {
+subprojects {
 	apply plugin: 'checkstyle'
 	apply plugin: 'io.franzbecker.gradle-lombok'
 	apply plugin: 'java'
@@ -32,6 +18,12 @@ allprojects {
 		jcenter()
 		mavenCentral()
 		mavenLocal()
+		maven {
+			url "https://repository.apache.org/snapshots"
+		}
+		maven {
+			url "https://oss.jfrog.org/jfrog-dependencies"
+		}
 	}
 
 	lombok {
@@ -117,15 +109,6 @@ project (':kafka-adapter') {
 				from components.java
 				artifact shadowJar
 			}
-			/*repositories {
-				maven {
-					url "http://nexus.abc.com/repository/stuff"
-					credentials {
-						username = "${System.env.NEXUS_USERNAME}"
-						password = "${System.env.NEXUS_PASSWORD}"
-					}
-				}
-			}*/
 		}
 	}
 
