@@ -68,7 +68,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     PravegaKafkaProducer(@NonNull final Properties configProperties, Map<String, Writer<V>> writers) {
         PravegaProducerConfig config = new PravegaProducerConfig(configProperties);
 
-        controllerUri = config.getServerEndpoints();
+        controllerUri = config.evaluateServerEndpoints();
         scope = config.getScope() != null ? config.getScope() : PravegaConfig.DEFAULT_SCOPE;
         serializer = config.getSerializer();
         numSegments = config.getNumSegments();

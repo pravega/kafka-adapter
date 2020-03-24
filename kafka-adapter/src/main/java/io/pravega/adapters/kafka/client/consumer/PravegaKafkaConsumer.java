@@ -108,11 +108,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         }
 
         PravegaConsumerConfig config = new PravegaConsumerConfig(configProperties);
-        controllerUri = config.getServerEndpoints();
+        controllerUri = config.evaluateServerEndpoints();
         scope = config.getScope() != null ? config.getScope() : PravegaConfig.DEFAULT_SCOPE;
         deserializer = config.getSerializer();
-        readerGroupId = config.getGroupId(UUID.randomUUID().toString());
-        readerId = config.getClientId("default_readerId");
+        readerGroupId = config.evaluateGroupId(UUID.randomUUID().toString());
+        readerId = config.evaluateClientId("default_readerId");
         interceptors = (List) (new ConsumerConfig(configProperties)).getConfiguredInstances(
                 ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, ConsumerInterceptor.class);
         readTimeout = config.getReadTimeoutInMs();

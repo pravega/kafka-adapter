@@ -52,12 +52,12 @@ public class PravegaConfig {
         if (properties.getProperty(SCOPE) != null) {
             builder.scope = properties.getProperty(SCOPE);
         }
-        builder.numSegments = numSegments(properties);
-        builder.readTimeoutInMs = readTimeout(properties);
+        builder.numSegments = evaluateNumSegments(properties);
+        builder.readTimeoutInMs = evaluateReadTimeout(properties);
         return builder.build();
     }
 
-    private static int numSegments(Properties properties) {
+    private static int evaluateNumSegments(Properties properties) {
         String value = properties.getProperty(NUM_SEGMENTS);
 
         if (value == null) {
@@ -71,7 +71,7 @@ public class PravegaConfig {
         }
     }
 
-    public static int readTimeout(Properties properties) {
+    public static int evaluateReadTimeout(Properties properties) {
         String timeout = properties.getProperty(READ_TIMEOUT);
 
         if (timeout != null && timeout.matches("\\d+")) {

@@ -37,9 +37,9 @@ public class PravegaKafkaConfigTests {
         props.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, "dummy_clientid");
 
         PravegaKafkaConfig config = new FakeKafkaConfig(props);
-        assertEquals("dummy_uri", config.getServerEndpoints());
-        assertEquals("dummy_groupid", config.getGroupId(null));
-        assertEquals("dummy_clientid", config.getClientId(null));
+        assertEquals("dummy_uri", config.evaluateServerEndpoints());
+        assertEquals("dummy_groupid", config.evaluateGroupId(null));
+        assertEquals("dummy_clientid", config.evaluateClientId(null));
     }
 
     @Test
@@ -50,7 +50,7 @@ public class PravegaKafkaConfigTests {
                     props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "dummy_uri");
                     PravegaKafkaConfig config = new FakeKafkaConfig(props);
 
-                    config.instantiateSerde(null);
+                    config.evaluateSerde(null);
                 },
                 e -> e instanceof NullPointerException);
 
@@ -60,7 +60,7 @@ public class PravegaKafkaConfigTests {
                     props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "dummy_uri");
                     PravegaKafkaConfig config = new FakeKafkaConfig(props);
 
-                    config.instantiateSerde("random");
+                    config.evaluateSerde("random");
                 },
                 e -> e instanceof IllegalArgumentException);
     }
@@ -72,7 +72,7 @@ public class PravegaKafkaConfigTests {
         props.setProperty("some-key", "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
 
         PravegaKafkaConfig config = new FakeKafkaConfig(props);
-        Serializer<Person> serializer = config.instantiateSerde("some-key");
+        Serializer<Person> serializer = config.evaluateSerde("some-key");
 
         assertNotNull(serializer);
         assertNotEquals(Person.class, serializer.getClass());
@@ -85,7 +85,7 @@ public class PravegaKafkaConfigTests {
         props.put("some-key", PersonSerializer.class);
 
         PravegaKafkaConfig config = new FakeKafkaConfig(props);
-        Serializer<Person> serializer = config.instantiateSerde("some-key");
+        Serializer<Person> serializer = config.evaluateSerde("some-key");
 
         assertNotNull(serializer);
         assertNotEquals(Person.class, serializer.getClass());
@@ -98,7 +98,7 @@ public class PravegaKafkaConfigTests {
         props.put("some-key", new PersonSerializer());
 
         PravegaKafkaConfig config = new FakeKafkaConfig(props);
-        Serializer<Person> serializer = config.instantiateSerde("some-key");
+        Serializer<Person> serializer = config.evaluateSerde("some-key");
 
         assertNotNull(serializer);
         assertNotEquals(Person.class, serializer.getClass());

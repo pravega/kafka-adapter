@@ -30,12 +30,12 @@ public class PravegaConsumerConfig extends PravegaKafkaConfig {
 
     public PravegaConsumerConfig(final Properties props) {
         super(props);
-        serializer = this.instantiateSerde(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
+        serializer = this.evaluateSerde(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
         readTimeoutInMs = this.getPravegaConfig().getReadTimeoutInMs();
-        maxPollRecords = extractMaxPollRecords(props);
+        maxPollRecords = evaluateMaxPollRecords(props);
     }
 
-    private static int extractMaxPollRecords(Properties properties) {
+    private static int evaluateMaxPollRecords(Properties properties) {
         String value = properties.getProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG);
         if (value == null) {
             return -1;

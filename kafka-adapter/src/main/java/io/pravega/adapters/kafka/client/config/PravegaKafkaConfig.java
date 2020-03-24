@@ -37,7 +37,7 @@ public abstract class PravegaKafkaConfig {
         pravegaConfig = PravegaConfig.getInstance(props);
     }
 
-    public String getServerEndpoints() {
+    public String evaluateServerEndpoints() {
         if (pravegaConfig.getControllerUri() != null) {
             return pravegaConfig.getControllerUri();
         } else {
@@ -49,15 +49,15 @@ public abstract class PravegaKafkaConfig {
         return pravegaConfig.getScope();
     }
 
-    public String getGroupId(String defaultValue) {
+    public String evaluateGroupId(String defaultValue) {
         return properties.getProperty(CommonClientConfigs.GROUP_ID_CONFIG, defaultValue);
     }
 
-    public String getClientId(String defaultValue) {
+    public String evaluateClientId(String defaultValue) {
         return properties.getProperty(CommonClientConfigs.CLIENT_ID_CONFIG, defaultValue);
     }
 
-    protected Serializer instantiateSerde(@NonNull String key) {
+    protected Serializer evaluateSerde(@NonNull String key) {
         Object serdeValue = this.properties.get(key);
 
         if (serdeValue == null) {

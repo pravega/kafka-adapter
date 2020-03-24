@@ -40,7 +40,7 @@ public class PravegaProducerConfigTests {
         props.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ConfigMaker.STRING_SERIALIZER);
 
         PravegaProducerConfig config = new PravegaProducerConfig(props);
-        assertEquals("pravega://localhost:9090", config.getServerEndpoints());
+        assertEquals("pravega://localhost:9090", config.evaluateServerEndpoints());
     }
 
     @Test
@@ -50,7 +50,7 @@ public class PravegaProducerConfigTests {
         props.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ConfigMaker.STRING_SERIALIZER);
 
         PravegaProducerConfig config = new PravegaProducerConfig(props);
-        assertEquals("tcp://localhost:9090", config.getServerEndpoints());
+        assertEquals("tcp://localhost:9090", config.evaluateServerEndpoints());
     }
 
     @Test

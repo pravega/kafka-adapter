@@ -34,7 +34,7 @@ public class PravegaProducerConfig extends PravegaKafkaConfig {
 
     public PravegaProducerConfig(Properties props) {
         super(props);
-        serializer = this.instantiateSerde(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
+        serializer = this.evaluateSerde(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
         numSegments = this.getPravegaConfig().getNumSegments();
         interceptors = instantiateInterceptors(props);
     }
