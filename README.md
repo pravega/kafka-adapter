@@ -9,6 +9,14 @@ You may obtain a copy of the License at
 -->
 # Kafka Adapter for Pravega
 
+  * [Overview](#overview)
+  * [How it Works](#how-it-works)
+  * [Usage](#usage)
+  * [Developing](#developing)
+    + [Prerequisites](#prerequisites)
+    + [Building Kafka Adapter](#building-kafka-adapter)
+    + [Performing Checks](#performing-checks)
+
 ## Overview
 
 Preexisting Kafka producer/consumer applications can be made to write to and read from Pravega instead of Kafka, using this adapter. To do so, one has to do these things: 
@@ -19,23 +27,13 @@ Preexisting Kafka producer/consumer applications can be made to write to and rea
 
 As such, Kafka applications that have application configuration externalized, can be made to point to Pravega (instead of Kafka) without any application source-code level changes. 
 
-## How it Works?
+## How it Works
 
 This is how it works at a very high-level: 
 
 1. This adapter replaces Kafka implementations such as `org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer` with Pravega-specific implementations. 
 2. The adapter library packages Kafka client libraries and relocates Kafka and custom implementations using the Gradle shadow plugin.
 3. Assuming that the application has changed its dependency from Kafka Client libraries to the library containing this adapter, when the applicaton invokes Kafka producer/consumer methods (`org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer`), the custom implementations get invoked instead of the original Kafka implementations. These stand-in custom implementations then map Kafka calls to what makes sense for Pravega. 
-
-## How to Build
-
-```bash
-# Building the project
-$ ./gradlew build
-
-# Publishing the shadow jar with custom producer and consumer implementations to local maven repo. 
-$ ./gradlew :kafka-adapter:publishShadowPublicationToMavenLocal
-```
 
 ## Usage
 
@@ -56,7 +54,25 @@ Maven:
 </dependency>
 ```
 
-# Code Analysis and Test Coverage
+Modify your Kafka Properties to target Pravega. Optionally, add Pravega-specific properties. More on this in documentation at a later time. The examples in `./kafka-adapter-samples` demonstrates its usage. 
+
+## Developing 
+
+### Prerequisites
+
+* Java 8+
+
+### Building Kafka Adapter
+
+```bash
+# Building the project
+$ ./gradlew build
+
+# Publishing the shadow jar with custom producer and consumer implementations to local maven repo. 
+$ ./gradlew :kafka-adapter:publishShadowPublicationToMavenLocal
+```
+
+### Performing Checks
 
 ```bash
 # Running Checkstyle for the adapter module
@@ -72,7 +88,4 @@ $ ./gradlew check
 
 # Generating unit test coverage report. Output can be found in build/jococoHtml
 $ ./gradlew jacocoTestReport
-
-# Seeing other available tasks
-$ ./gradlew tasks
 ```
