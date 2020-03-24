@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package shared;
+package io.pravega.samplesapps.shared;
 
 import lombok.extern.slf4j.Slf4j;
 

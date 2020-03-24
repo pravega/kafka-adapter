@@ -7,7 +7,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
-package shared;
+package io.pravega.samplesapps.shared;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientConfig;
