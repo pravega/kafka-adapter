@@ -19,29 +19,37 @@ You may obtain a copy of the License at
 
 ## Overview
 
-Preexisting Kafka producer/consumer applications can be made to write to and read from Pravega instead of Kafka, using this adapter. To do so, one has to do these things: 
+Preexisting Kafka producer/consumer applications can be made to write to and read from Pravega instead of Kafka, using 
+this adapter. To do so, one has to do these things: 
 
 1. Modify the dependency from Kafka Client library, to this adapter, and rebuild the application. 
 2. Modify the configuration to point to Pravega. This is typically done at deployment time. 
 3. Rerun/redeploy the application. 
 
-As such, Kafka applications that have application configuration externalized, can be made to point to Pravega (instead of Kafka) without any application source-code level changes. 
+As such, Kafka applications that have application configuration externalized, can be made to point to Pravega (instead 
+of Kafka) without any application source-code level changes. 
 
 ## How it Works
 
 This is how it works at a very high-level: 
 
-1. This adapter replaces Kafka implementations such as `org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer` with Pravega-specific implementations. 
-2. The adapter library packages Kafka client libraries and relocates Kafka and custom implementations using the Gradle shadow plugin.
-3. Assuming that the application has changed its dependency from Kafka Client libraries to the library containing this adapter, when the applicaton invokes Kafka producer/consumer methods (`org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer`), the custom implementations get invoked instead of the original Kafka implementations. These stand-in custom implementations then map Kafka calls to what makes sense for Pravega. 
+1. This adapter replaces Kafka implementations such as `org.apache.kafka.clients.producer.KafkaProducer` and 
+`org.apache.kafka.clients.consumer.KafkaConsumer` with Pravega-specific implementations. 
+2. The adapter library packages Kafka client libraries and relocates Kafka and custom implementations using the 
+Gradle shadow plugin.
+3. Assuming that the application has changed its dependency from Kafka Client libraries to the library containing
+ this adapter, when the applicaton invokes Kafka producer/consumer methods (`org.apache.kafka.clients.producer.KafkaProducer` and `org.apache.kafka.clients.consumer.KafkaConsumer`), the custom implementations get invoked instead of the original Kafka implementations. These stand-in custom implementations then map Kafka calls to what makes sense for Pravega. 
 
 ## Usage
 
-Add the following to your dependencies list. Replace the version if necessary. 
+Add the following to your dependencies list. Replace the version if necessary. Don't forget the classifier. 
 
 Gradle: 
 ```groovy
-compile group: "io.pravega.adapters.kafka-adapter", name: "kafka-adapter", version: "1.0-SNAPSHOT", classifier: "all"
+compile group: "io.pravega.adapters.kafka-adapter", 
+        name: "kafka-adapter", 
+        version: "1.0-SNAPSHOT", 
+        classifier: "all"
 ```
 
 Maven: 
@@ -54,7 +62,8 @@ Maven:
 </dependency>
 ```
 
-Modify your Kafka Properties to target Pravega. Optionally, add Pravega-specific properties. More on this in documentation at a later time. The examples in `./kafka-adapter-samples` demonstrates its usage. 
+Modify your Kafka Properties to target Pravega. Optionally, add Pravega-specific properties. More on this in 
+documentation at a later time. Examples in sub-project `kafka-adapter-samples` demonstrate the adapter's usage. 
 
 ## Developing 
 
