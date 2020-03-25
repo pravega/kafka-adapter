@@ -326,7 +326,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 // Check that we haven't crossed the timeout yet before initiating reads from the next reader.
                 if (stopWatch.getTime() < finalTimeout) {
                     String stream = i.getKey();
-                    log.debug("Reading data for scope/stream [{}/{}]", scope, i.getKey());
+                    log.trace("Reading data for scope/stream [{}/{}]", scope, i.getKey());
 
                     TopicPartition topicPartition = new TopicPartition(stream, -1);
                     Reader<V> reader = i.getValue();
@@ -363,7 +363,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                         log.debug("No records to add");
                     }
                 } else {
-                    log.debug("Read time already expired for stream: {}", i.getKey());
+                    log.trace("Read time already expired for stream: {}", i.getKey());
                 }
             });
         }
