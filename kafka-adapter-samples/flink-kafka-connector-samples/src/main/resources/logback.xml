@@ -19,7 +19,9 @@
     <logger name="io.pravega.adapters" level="error"/>
     <logger name="io.pravega.client" level="error"/>
     <logger name="io.pravega" level="error"/>
-    <logger name="org.apache.kafka.clients.consumer.KafkaConsumer" level="debug"/>
+    <logger name="org.apache.kafka.clients.consumer.KafkaConsumer" level="error"/>
     <logger name="io.netty" level="error"/>
     <logger name="kafka" level="error"/>
+    <logger name="org.apache.flink.streaming.connectors.kafka" level="debug"/>
+    <logger name="io.pravega.samplesapps.flinkconnector" level = "debug"/>
 </configuration>
