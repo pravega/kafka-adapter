@@ -14,7 +14,6 @@ import io.pravega.client.stream.EventRead;
 import java.util.List;
 
 public interface Reader<T> extends AutoCloseable {
-
     List<T> readAll(long timeoutInMillis);
 
     EventRead<T> readNextEvent(long timeoutInMillis);
@@ -22,5 +21,4 @@ public interface Reader<T> extends AutoCloseable {
     T tryReadNext(long timeinMillis);
 
     T readNext(long timeinMillis);
-
 }

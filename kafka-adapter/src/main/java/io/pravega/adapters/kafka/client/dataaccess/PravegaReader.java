@@ -123,7 +123,6 @@ public class PravegaReader<T> implements Reader<T> {
         EventRead<T> event = this.reader.readNextEvent(timeinMillis);
         if (event != null) {
             return event.getEvent();
-
         } else {
             return null;
         }
