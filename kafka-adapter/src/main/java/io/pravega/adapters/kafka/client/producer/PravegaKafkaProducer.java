@@ -164,7 +164,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     private RecordMetadata prepareRecordMetadata(ProducerRecord<K, V> producerRecord) {
-        // TODO: Note that Pravega doesn't return these values upon write, so we are returning dummy values.
+        // Note that Pravega doesn't return these values upon write, so we are returning dummy values.
         return new RecordMetadata(new TopicPartition(producerRecord.topic(), -1), -1, -1,
                 System.currentTimeMillis(),
                 ChecksumMaker.computeCRC32Checksum(producerRecord.value().toString()),
