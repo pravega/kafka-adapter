@@ -95,9 +95,10 @@ allprojects {
 	}
 }
 
-project ('kafka-adapter') {
+project (':kafka-adapter') {
 	apply plugin: 'com.github.johnrengelman.shadow' // Used to generate a fat jar with all dependencies
 	apply plugin: 'maven-publish' // Used to publish shadowJar generated fat jar to repo
+	apply plugin: 'jacoco'
 
 	group "${groupId}"
 	version "${versionId}"
@@ -211,7 +212,7 @@ project ('kafka-adapter') {
 	jar.enabled = false
 }
 
-project ('kafka-adapter-samples') {
+project (':kafka-adapter-samples') {
 	dependencies {
 		// Kafka dependencies
 		// compile group: "org.apache.kafka", name: "kafka_2.13", version: "${kafkaVersion}"
@@ -223,7 +224,7 @@ project ('kafka-adapter-samples') {
 	}
 }
 
-project ('kafka-adapter-samples:flink-kafka-connector-samples') {
+project (':kafka-adapter-samples:flink-kafka-connector-samples') {
 	apply plugin: "scala"
 	dependencies {
 		// Set 1 (to Pravega)

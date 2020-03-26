@@ -96,5 +96,5 @@ $ ./gradlew :kafka-adapter:spotbugsTest
 $ ./gradlew check
 
 # Generating unit test coverage report. Output can be found in build/jococoHtml
-$ ./gradlew jacocoTestReport
+$ ./gradlew :kafka-adapter:jacocoTestReport
 ```
