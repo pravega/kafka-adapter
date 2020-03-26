@@ -54,6 +54,7 @@ import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -67,6 +68,10 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     private static final int DEFAULT_READ_TIMEOUT_IN_MILLIS = 500;
 
     private static final int DEFAULT_RECORDS_TO_READ_PER_READER_AND_ITERATION = 10;
+
+    private static final int DUMMY_PARTITION_NUM = 0;
+
+    private static final int DUMMY_OFFSET = 0;
 
     private final List<ConsumerInterceptor<K, V>> interceptors;
 
@@ -87,7 +92,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Setter(AccessLevel.PACKAGE)
     private Map<String, Reader<V>> readersByStream = new HashMap<>();
 
+    private Set<TopicPartition> topicPartitionsAssigned;
+
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
+
+    private final AtomicBoolean isWoken = new AtomicBoolean(false);
 
     private final Serializer deserializer;
 
@@ -128,10 +137,16 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public Set<TopicPartition> assignment() {
-        log.debug("assignment() hit");
-        return new HashSet<TopicPartition>(); // For Flink Kafka connector
-        //throw new UnsupportedOperationException(
-        // "Manually assigning list of partitions to this serialization is not supported");
+        log.trace("assignment() called");
+        // final Set<TopicPartition> result = new HashSet<>();
+        // this.readersByStream.keySet().stream().forEach(topic -> result.add(new TopicPartition(topic, 0)));
+        if (topicPartitionsAssigned != null) {
+            log.debug("Returning a result of size {}", topicPartitionsAssigned.size());
+        } else {
+            log.debug("No assigned topic partitions");
+            return new HashSet<>();
+        }
+        return this.topicPartitionsAssigned;
     }
 
     /**
@@ -141,7 +156,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public Set<String> subscription() {
-        log.debug("Returning subscriptions");
+        log.trace("subscription() invoked");
         return this.readersByStream.keySet();
     }
 
@@ -150,12 +165,10 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         subscribe(topics, null);
     }
 
-
     @Override
     public void subscribe(@NonNull Collection<String> topics, ConsumerRebalanceListener callback) {
-        log.debug("Subscribing to topics: {}, with callback {}", topics, callback);
+        log.trace("Subscribing to topics: {}, with callback {}", topics, callback);
         ensureNotClosed();
-
         closeAllReaders();
         readersByStream = new HashMap<>();
 
@@ -174,12 +187,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                 readersByStream.put(topic, reader);
             }
         }
-
     }
 
     @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
-        log.debug("Subscribe with pattern {} and callback called", pattern);
+        log.trace("Subscribe with pattern {} and callback called", pattern);
         throw new UnsupportedOperationException("Subscribing to topic(s) matching specified pattern is not supported");
     }
 
@@ -191,7 +203,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public void unsubscribe() {
         ensureNotClosed();
-        log.debug("Un-subscribing from all topics");
+        log.trace("Un-subscribing from all topics");
         closeAllReaders();
         readersByStream = new HashMap<>();
     }
@@ -233,13 +245,17 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public void assign(Collection<TopicPartition> partitions) {
-        log.debug("assign called with partitions: {}", partitions);
+        log.trace("assign(partitions) called with partitions: {}", partitions);
 
         final Collection<String> topics = new ArrayList<>();
         partitions.stream().forEach(tp -> topics.add(tp.topic()));
 
+        // TODO: Decouple assignment from subscription. And implement the logic for allowing either (but not both)
+        //  of them.
         log.debug("invoking subscribe for topics {}", topics);
         this.subscribe(topics);
+
+        this.topicPartitionsAssigned = new HashSet<>(partitions);
         // Flink Kafka connector uses it.
     }
 
@@ -296,10 +312,9 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         return this.readersByStream.size() > 0;
     }
 
-
     @VisibleForTesting
     ConsumerRecords<K, V> read(long timeout, int numRecordsPerReaderInEachIteration) {
-        log.debug("read invoked with timeout: {} and numRecordsPerReaderInEachIteration: {}", timeout,
+        log.trace("read(..) invoked with timeout: {} and numRecordsPerReaderInEachIteration: {}", timeout,
                 numRecordsPerReaderInEachIteration);
         long startTimeInMillis = System.currentTimeMillis();
         AtomicInteger totalCountOfRecords = new AtomicInteger(0);
@@ -322,13 +337,14 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
             this.readersByStream.entrySet().stream().forEach(i -> {
                 ensureNotClosed();
+                ensureNotWokenUp();
 
                 // Check that we haven't crossed the timeout yet before initiating reads from the next reader.
                 if (stopWatch.getTime() < finalTimeout) {
                     String stream = i.getKey();
-                    log.trace("Reading data for scope/stream [{}/{}]", scope, i.getKey());
+                    log.debug("Reading data for scope/stream [{}/{}]", scope, i.getKey());
 
-                    TopicPartition topicPartition = new TopicPartition(stream, -1);
+                    TopicPartition topicPartition = new TopicPartition(stream, DUMMY_PARTITION_NUM);
                     Reader<V> reader = i.getValue();
 
                     List<ConsumerRecord<K, V>> recordsToAdd = new ArrayList<>();
@@ -373,12 +389,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     private ConsumerRecord<K, V> translateToConsumerRecord(String stream, EventRead<V> event) {
-        int partition = 0;
-
         // Refers to the offset that points to the record in a partition
-        int offset = 0;
-
-        return new ConsumerRecord(stream, partition, offset, NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE,
+        return new ConsumerRecord(stream, DUMMY_PARTITION_NUM, DUMMY_OFFSET, NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE,
                 NULL_CHECKSUM, NULL_SIZE, NULL_SIZE, null, event.getEvent());
 
     }
@@ -401,102 +413,122 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public void commitSync() {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitSync() invoked");
     }
 
     @Override
     public void commitSync(Duration timeout) {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitSync(timeout) invoked with timeout: {}", timeout);
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets) {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitSync(offsets) invoked");
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets, Duration timeout) {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitSync(offsets, timeout) invoked");
     }
 
     @Override
     public void commitAsync() {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitAsync() invoked");
     }
 
     @Override
     public void commitAsync(OffsetCommitCallback callback) {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitAsync(callback) invoked");
     }
 
     @Override
     public void commitAsync(Map<TopicPartition, OffsetAndMetadata> offsets, OffsetCommitCallback callback) {
         // Pravega always "commits", nothing special to do.
+        log.trace("commitAsync(offsets, callback) invoked");
     }
 
     @Override
     public void seek(TopicPartition partition, long offset) {
+        log.trace("seek(partition, offset) invoked");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seek(TopicPartition partition, OffsetAndMetadata offsetAndMetadata) {
+        log.trace("seek(partition, offsetAndMetadata) invoked");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seekToBeginning(Collection<TopicPartition> partitions) {
+        log.trace("seekToBeginning(partitions) invoked");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seekToEnd(Collection<TopicPartition> partitions) {
+        log.trace("seekToEnd(partitions) invoked");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public long position(TopicPartition partition) {
+        log.trace("position(partition) invoked");
         return -1;
     }
 
     @Override
     public long position(TopicPartition partition, Duration timeout) {
+        log.trace("position(partition, timeout) invoked");
         return -1;
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition) {
+        log.trace("committed(partition) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition, Duration timeout) {
+        log.trace("committed(partition, timeout) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions) {
+        log.trace("committed(partitions) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions, Duration timeout) {
+        log.trace("committed(partitions, timeout) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        // throw new UnsupportedOperationException("Not supported");
+        log.trace("metrics() invoked");
+        // We don't throw an unsupported exception here so that clients such as Flink Kafka Connector don't encounter
+        // an exception.
         return new HashMap<>();
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
+        log.trace("partitionsFor(topic) invoked");
         return partitionsFor(topic, Duration.ofMillis(200));
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
-        // throw new UnsupportedOperationException("Not supported");
+        log.trace("partitionsFor(topic, timeout) invoked");
 
         // This method is internally invoked by Flink Kafka adapter.
         PartitionInfo info = new PartitionInfo(topic, 0, null, null, null);
@@ -507,13 +539,13 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics() {
-        log.debug("listTopics invoked");
+        log.trace("listTopics() invoked");
         final Map<String, List<PartitionInfo>> result = new HashMap<>();
         this.readersByStream.keySet().stream().forEach(topic ->
                 result.put(topic, Arrays.asList(
                         new PartitionInfo(topic, 0, null, null, null))));
+        log.trace("Returning result = {}", result);
         return result;
-        //throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
@@ -523,27 +555,32 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public Set<TopicPartition> paused() {
+        log.trace("paused() invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void pause(Collection<TopicPartition> partitions) {
+        log.trace("pause(partitions) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void resume(Collection<TopicPartition> partitions) {
+        log.trace("resume(partitions) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch) {
+        log.trace("offsetsForTimes(timestampsToSearch) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch,
                                                                    Duration timeout) {
+        log.trace("offsetsForTimes(timestampsToSearch, timeout) invoked");
         throw new UnsupportedOperationException("Not supported");
     }
 
@@ -592,13 +629,21 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void wakeup() {
-        // throw new UnsupportedOperationException("Not supported");
-        // Ignore. This method is invoked by Flink Kafka connector.
+        // Is invoked by Flink Kafka Connector
+        log.debug("wakeup() invoked");
+        isWoken.set(true);
     }
 
     private void ensureNotClosed() {
         if (isClosed.get()) {
             throw new IllegalStateException("This instance is closed already");
+        }
+    }
+
+    private void ensureNotWokenUp() {
+        if (this.isWoken.get()) {
+            this.isWoken.set(true);
+            throw new WakeupException();
         }
     }
 }
