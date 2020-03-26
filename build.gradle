@@ -224,14 +224,24 @@ project ('kafka-adapter-samples') {
 }
 
 project ('kafka-adapter-samples:flink-kafka-connector-samples') {
-
 	apply plugin: "scala"
 	dependencies {
+		// Set 1 (to Pravega)
 		compile ("org.apache.flink:flink-connector-kafka_${flinkScalaVersion}:${flinkVersion}") {
 			exclude group: "org.apache.kafka", module: "kafka-clients"
 		}
+		compile "io.pravega.adapters.kafka-adapter:kafka-adapter:1.0-SNAPSHOT:all"
+		
+		/*
+		// Set 2 (To Kafka)
+		compile "org.apache.flink:flink-connector-kafka_${flinkScalaVersion}:${flinkVersion}"
+		compile group: "io.pravega", name: "pravega-client", version: "${pravegaVersion}"
+		*/
+
+		compile group: "io.pravega", name: "pravega-common", version: "${pravegaVersion}"
+
 		compile "org.apache.flink:flink-streaming-java_${flinkScalaVersion}:${flinkVersion}"
 		compile "org.apache.flink:flink-streaming-scala_${flinkScalaVersion}:${flinkVersion}"
-		compile "io.pravega.adapters.kafka-adapter:kafka-adapter:1.0-SNAPSHOT:all"
+
 	}
 }
