@@ -12,6 +12,7 @@ package io.pravega.samplesapps.flinkconnector;
 import io.pravega.client.stream.impl.JavaSerializer;
 import io.pravega.samplesapps.shared.PravegaReader;
 import io.pravega.samplesapps.shared.PravegaWriter;
+import io.pravega.samplesapps.shared.StringDeserializationSchema;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
@@ -24,7 +25,7 @@ public class PravegaBasicReadExample extends BasicReadExample {
 
     public PravegaBasicReadExample(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
                                    @NonNull String topic) {
-        super(isCreateTestData, bootstrapServer, clientId, topic);
+        super(isCreateTestData, bootstrapServer, clientId, topic, new StringDeserializationSchema());
     }
 
     @Override
@@ -55,7 +56,7 @@ public class PravegaBasicReadExample extends BasicReadExample {
     }
 
     public static void main(String[] args) {
-        PravegaBasicReadExample driver = new PravegaBasicReadExample(true, "tcp://localhost:9090",
+        PravegaBasicReadExample driver = new PravegaBasicReadExample(false, "tcp://localhost:9090",
                 "testClient", "test-topic");
         driver.execute();
     }

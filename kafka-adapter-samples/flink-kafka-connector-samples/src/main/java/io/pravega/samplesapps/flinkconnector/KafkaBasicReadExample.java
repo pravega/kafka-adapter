@@ -11,6 +11,7 @@ package io.pravega.samplesapps.flinkconnector;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -24,7 +25,7 @@ public class KafkaBasicReadExample extends BasicReadExample {
 
     public KafkaBasicReadExample(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
                                  String topic) {
-        super(isCreateTestData, bootstrapServer, clientId, topic);
+        super(isCreateTestData, bootstrapServer, clientId, topic, new SimpleStringSchema());
     }
 
     @Override

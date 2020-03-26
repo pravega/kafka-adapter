@@ -19,10 +19,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.FilterFunction;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,6 +45,10 @@ public abstract class BasicReadExample {
     @Getter
     private final String stream;
 
+    @NonNull
+    @Getter
+    private final DeserializationSchema deserializationSchema;
+
     // The template method.
     protected abstract void createTestData();
 
@@ -55,25 +60,30 @@ public abstract class BasicReadExample {
             log.info("Created test data");
         }
 
-        Properties kafkaConsumerClientProps = new Properties();
-        kafkaConsumerClientProps.setProperty("bootstrap.servers", this.getBootstrapServer());
-        kafkaConsumerClientProps.setProperty("group.id", UUID.randomUUID().toString());
-        kafkaConsumerClientProps.setProperty("client.id", this.getClientId());
-        kafkaConsumerClientProps.setProperty("auto.offset.reset", "earliest");
-        // kafkaConsumerClientProps.setProperty("max.poll.records", appProperties.getProperty("kafka.max.poll.records"));
-        kafkaConsumerClientProps.setProperty("flink.poll-timeout", "2000");
-        kafkaConsumerClientProps.setProperty("request.timeout.ms", "1000");
-        // kafkaConsumerClientProps.setProperty("check.crcs", "false");
-        kafkaConsumerClientProps.setProperty("flink.disable-metrics", "true");
+        Properties connectorConfig = new Properties();
+        connectorConfig.setProperty("bootstrap.servers", this.getBootstrapServer());
+        connectorConfig.setProperty("group.id", UUID.randomUUID().toString());
+        connectorConfig.setProperty("client.id", this.getClientId());
+        connectorConfig.setProperty("auto.offset.reset", "earliest");
+        // connectorConfig.setProperty("max.poll.records", appProperties.getProperty("kafka.max.poll.records"));
+        connectorConfig.setProperty("flink.poll-timeout", "2000");
+        connectorConfig.setProperty("request.timeout.ms", "1000");
+        // connectorConfig.setProperty("check.crcs", "false");
+        connectorConfig.setProperty("flink.disable-metrics", "true");
+        connectorConfig.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        connectorConfig.setProperty("heartbeat.timeout", "550000");
         log.info("Created connector properties");
 
         // Instantiating the Kafka consumer streaming data source
-        FlinkKafkaConsumer<String> flinkConsumer = new FlinkKafkaConsumer<String>(Arrays.asList(this.getStream()),
-                new SimpleStringSchema(), kafkaConsumerClientProps);
+        FlinkKafkaConsumer<String> flinkKafkaConsumer = new FlinkKafkaConsumer<String>(Arrays.asList(this.getStream()),
+                this.deserializationSchema, connectorConfig);
         log.info("Instantiated Flink Kafka consumer");
 
+        // This will invoke seekToBeginning of the Consumer, which is currently not supported.
+        // flinkKafkaConsumer.setStartFromEarliest();
+
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<String> stream = env.addSource(flinkConsumer);
+        DataStream<String> stream = env.addSource(flinkKafkaConsumer);
         stream.filter(new FilterFunction<String>() {
             @Override
             public boolean filter(String s) throws Exception {
