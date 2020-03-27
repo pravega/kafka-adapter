@@ -10,6 +10,7 @@
 package io.pravega.adapters.kafka.client.producer;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.pravega.adapters.kafka.client.common.ChecksumMaker;
 import io.pravega.adapters.kafka.client.config.PravegaConfig;
 import io.pravega.adapters.kafka.client.config.PravegaProducerConfig;
@@ -24,11 +25,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -201,16 +204,17 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         cleanup();
     }
 
+    @SneakyThrows
     @Override
     public void close(long timeout, TimeUnit unit) {
         log.trace("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
-        cleanup();
+        SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).runUninterruptiblyWithTimeout(() -> cleanup(),
+                timeout, unit);
     }
 
     @Override
     public void close(Duration timeout) {
-        log.trace("Closing the producer with timeout: {}", timeout);
-        cleanup();
+        close(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void cleanup() {
