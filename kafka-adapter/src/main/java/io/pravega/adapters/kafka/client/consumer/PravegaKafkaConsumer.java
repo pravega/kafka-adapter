@@ -10,6 +10,7 @@
 package io.pravega.adapters.kafka.client.consumer;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.pravega.adapters.kafka.client.config.PravegaConfig;
 import io.pravega.adapters.kafka.client.config.PravegaConsumerConfig;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +40,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -548,9 +551,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         return result;
     }
 
+    @SneakyThrows
     @Override
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
-        return listTopics();
+        return SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callUninterruptiblyWithTimeout(
+                () -> listTopics(),
+                timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -609,14 +615,16 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         close(Duration.ofMillis(Long.MAX_VALUE));
     }
 
+    @SneakyThrows
     @Override
     public void close(long timeout, TimeUnit unit) {
-        close(Duration.ofMillis(unit.toMillis(timeout)));
+        SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).runUninterruptiblyWithTimeout(() -> cleanup(),
+                timeout, unit);
     }
 
     @Override
     public void close(Duration timeout) {
-        cleanup();
+        close(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void cleanup() {

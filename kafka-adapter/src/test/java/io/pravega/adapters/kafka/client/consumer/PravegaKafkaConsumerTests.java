@@ -10,17 +10,23 @@
 package io.pravega.adapters.kafka.client.consumer;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 import io.pravega.adapters.kafka.client.dataaccess.Reader;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 
@@ -32,6 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@Slf4j
 public class PravegaKafkaConsumerTests {
 
     @Test(expected = IllegalArgumentException.class)
@@ -114,14 +121,6 @@ public class PravegaKafkaConsumerTests {
         PravegaKafkaConsumer<String, Object> consumer =
                 new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
 
-        /*assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.assign(null),
-                e -> e instanceof UnsupportedOperationException);
-
-        assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.assignment(),
-                e -> e instanceof UnsupportedOperationException);*/
-
         Pattern pattern = null;
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.subscribe(pattern),
@@ -151,18 +150,6 @@ public class PravegaKafkaConsumerTests {
                 () -> consumer.committed(new TopicPartition("topic", 1)),
                 e -> e instanceof UnsupportedOperationException);
 
-        /*assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.metrics(),
-                e -> e instanceof UnsupportedOperationException);
-
-        assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.partitionsFor("topic"),
-                e -> e instanceof UnsupportedOperationException);
-
-        assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.partitionsFor("topic", null),
-                e -> e instanceof UnsupportedOperationException);*/
-
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.pause(null),
                 e -> e instanceof UnsupportedOperationException);
@@ -174,14 +161,6 @@ public class PravegaKafkaConsumerTests {
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.resume(null),
                 e -> e instanceof UnsupportedOperationException);
-
-        /*assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.listTopics(),
-                e -> e instanceof UnsupportedOperationException);
-
-        assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.listTopics(null),
-                e -> e instanceof UnsupportedOperationException);*/
 
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.offsetsForTimes(null),
@@ -206,10 +185,6 @@ public class PravegaKafkaConsumerTests {
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.endOffsets(null, null),
                 e -> e instanceof UnsupportedOperationException);
-
-        /*assertThrows("Didn't encounter UnsupportedOperationException.",
-                () -> consumer.wakeup(),
-                e -> e instanceof UnsupportedOperationException);*/
 
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.committed(new HashSet<>()),
@@ -242,11 +217,6 @@ public class PravegaKafkaConsumerTests {
         verify(reader2, times(1)).close();
     }
 
-    @Test
-    public void commitSyncOperationsSucceed() {
-
-    }
-
     @Test(expected = IllegalStateException.class)
     public void pollAfterClosedThrowsException() {
         PravegaKafkaConsumer<String, String> consumer =
@@ -257,7 +227,6 @@ public class PravegaKafkaConsumerTests {
 
     @Test
     public void invalidConfigRejectedDuringConstruction() {
-
         assertThrows("Didn't encounter expected exception when bootstrap server was not specified.",
                 () -> {
                     // Bootstrap server not configured
@@ -276,6 +245,44 @@ public class PravegaKafkaConsumerTests {
                     new PravegaKafkaConsumer<String, String>(props);
                 },
                 e -> e instanceof IllegalArgumentException);
+    }
+
+    @Test(expected = TimeoutException.class)
+    public void closeTimesOutWhenTimeoutIsTooSmall() {
+        Consumer<String, String> consumer =
+                new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        Collection<String> topics = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            topics.add("topic" + i);
+        }
+        consumer.subscribe(topics);
+        consumer.close(Duration.ofMillis(1));
+    }
+
+    @Test
+    public void listTopicsReturnsPartitionsByTopic() {
+        Consumer<String, Object> consumer = new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig());
+        Collection<String> topics = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            topics.add("topic" + i);
+        }
+        consumer.subscribe(topics);
+        Map<String, List<PartitionInfo>> partitionsByTopic = consumer.listTopics();
+        partitionsByTopic.containsKey("topic1");
+        partitionsByTopic.containsKey("topic5");
+    }
+
+    @Test(expected = TimeoutException.class)
+    public void listTopicsTimesOurWhenTimeoutIsTooLow() {
+        try (Consumer<String, Object> consumer = new PravegaKafkaConsumer<>(prepareDummyCompleteConsumerConfig())) {
+            Collection<String> topics = new ArrayList<>();
+            for (int i = 0; i < 100; i++) {
+                topics.add("topic" + i);
+            }
+            consumer.subscribe(topics);
+            consumer.listTopics(Duration.ofMillis(1));
+        }
+        log.info("Done listing topics");
     }
 
     private Properties prepareDummyCompleteConsumerConfig() {

@@ -109,6 +109,7 @@ project (':kafka-adapter') {
 		compile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}"
 		compile group: "org.apache.kafka", name: "kafka-clients", version: "${kafkaVersion}"
 		compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
+		compile group: "com.google.guava", name: "guava", version: "${guavaVersion}"
 
 		testCompile group: "org.apache.kafka", name: "kafka_2.12", version: "${kafkaVersion}", classifier: "test"
 		testCompile group: "org.apache.kafka", name: "kafka-streams", version: "${kafkaVersion}", classifier: "test"
