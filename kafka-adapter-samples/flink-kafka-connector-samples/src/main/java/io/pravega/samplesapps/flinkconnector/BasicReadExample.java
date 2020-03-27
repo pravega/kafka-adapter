@@ -65,12 +65,10 @@ public abstract class BasicReadExample {
         connectorConfig.setProperty("group.id", UUID.randomUUID().toString());
         connectorConfig.setProperty("client.id", this.getClientId());
         connectorConfig.setProperty("auto.offset.reset", "earliest");
-        // connectorConfig.setProperty("max.poll.records", appProperties.getProperty("kafka.max.poll.records"));
         connectorConfig.setProperty("flink.poll-timeout", "2000");
         connectorConfig.setProperty("request.timeout.ms", "1000");
-        // connectorConfig.setProperty("check.crcs", "false");
         connectorConfig.setProperty("flink.disable-metrics", "true");
-        connectorConfig.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        connectorConfig.setProperty("enable.auto.commit", "false");
         connectorConfig.setProperty("heartbeat.timeout", "550000");
         log.info("Created connector properties");
 
