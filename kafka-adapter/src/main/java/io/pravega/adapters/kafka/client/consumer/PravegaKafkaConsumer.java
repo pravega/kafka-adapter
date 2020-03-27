@@ -556,7 +556,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
         return SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callUninterruptiblyWithTimeout(
                 () -> listTopics(),
-                timeout.toMillis(), TimeUnit.MILLISECONDS);
+                timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
 
     @Override

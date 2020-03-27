@@ -280,7 +280,7 @@ public class PravegaKafkaConsumerTests {
                 topics.add("topic" + i);
             }
             consumer.subscribe(topics);
-            consumer.listTopics(Duration.ofMillis(1));
+            consumer.listTopics(Duration.ofNanos(1));
         }
         log.info("Done listing topics");
     }
