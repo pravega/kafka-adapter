@@ -475,8 +475,18 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void seekToEnd(Collection<TopicPartition> partitions) {
-        log.trace("seekToEnd(partitions) invoked");
-        throw new UnsupportedOperationException("Seek is not supported");
+        if (partitions == null) {
+            throw new IllegalArgumentException("partitions are null");
+        }
+        log.debug("seekToEnd(partitions) invoked");
+        Set<String> topicsAlreadyHandled = new HashSet<>();
+        for (TopicPartition topicPartition : partitions) {
+            Reader reader = this.readersByStream.get(topicPartition.topic());
+            if (reader != null && topicsAlreadyHandled.contains(topicPartition.topic())) {
+                reader.seekToEnd();
+                topicsAlreadyHandled.add(topicPartition.topic());
+            }
+        }
     }
 
     @Override

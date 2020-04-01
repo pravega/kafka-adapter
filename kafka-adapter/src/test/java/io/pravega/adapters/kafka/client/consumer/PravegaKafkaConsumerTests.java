@@ -142,9 +142,9 @@ public class PravegaKafkaConsumerTests {
                 () -> consumer.seekToBeginning(null),
                 e -> e instanceof UnsupportedOperationException);
 
-        assertThrows("Didn't encounter UnsupportedOperationException.",
+        /*assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.seekToEnd(null),
-                e -> e instanceof UnsupportedOperationException);
+                e -> e instanceof UnsupportedOperationException);*/
 
         assertThrows("Didn't encounter UnsupportedOperationException.",
                 () -> consumer.committed(new TopicPartition("topic", 1)),

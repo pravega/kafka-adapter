@@ -21,4 +21,8 @@ public interface Reader<T> extends AutoCloseable {
     T tryReadNext(long timeinMillis);
 
     T readNext(long timeinMillis);
+
+    void seekToEnd();
+
+    List<String> getStreams();
 }

@@ -13,9 +13,12 @@ import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamInfo;
+import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
 import io.pravega.client.stream.ReaderConfig;
+import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.pravega.client.stream.StreamCut;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.Setter;
@@ -48,6 +52,10 @@ public class PravegaReader<T> implements Reader<T> {
     @Setter(AccessLevel.PACKAGE)
     private EventStreamReader<T> reader;
     private ReaderGroupManager readerGroupManager;
+
+    private StreamManager streamManager;
+
+    private ReaderGroup readerGroup;
 
     public PravegaReader(@NonNull String scope, @NonNull List<String> streams, @NonNull String controllerUri,
                          @NonNull Serializer serializer, @NonNull String readerGroupName, @NonNull String readerId) {
@@ -87,8 +95,12 @@ public class PravegaReader<T> implements Reader<T> {
         readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
         readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
 
+        readerGroup = readerGroupManager.getReaderGroup(this.readerGroupName);
+
         reader = EventStreamClientFactory.withScope(scope, clientConfig)
                 .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
+
+        streamManager = StreamManager.create(clientConfig);
     }
 
     @Override
@@ -138,10 +150,33 @@ public class PravegaReader<T> implements Reader<T> {
     }
 
     @Override
+    public void seekToEnd() {
+        if (!isInitialized()) {
+            init();
+        }
+        log.debug("seekToEnd() invoked");
+        ReaderGroupConfig.ReaderGroupConfigBuilder builder = ReaderGroupConfig.builder();
+        this.streams.stream().forEach(stream -> {
+            StreamInfo streamInfo = this.streamManager.getStreamInfo(this.scope, stream);
+            StreamCut tailStreamCut = streamInfo.getTailStreamCut();
+            log.debug("tailStreamCut: {}", tailStreamCut);
+            builder.stream(this.scope + "/" + stream, tailStreamCut);
+            // builder.startFromStreamCuts()
+        });
+        this.readerGroup.resetReaderGroup(builder.build());
+    }
+
+    @Override
+    public List<String> getStreams() {
+        return this.streams;
+    }
+
+    @Override
     public void close() {
         try {
             reader.close();
             readerGroupManager.close();
+            streamManager.close();
         } catch (Exception e) {
             log.warn("Encountered exception in cleaning up", e);
         }

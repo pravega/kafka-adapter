@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @Slf4j
 public class ReaderAndWriterUsageExamples {
@@ -153,5 +154,70 @@ public class ReaderAndWriterUsageExamples {
             assertEquals(writeEvent1, readEvent1);
             assertEquals(writeEvent2, readEvent2);
         }
+    }
+
+    @Test
+    public void readerTailReads() {
+        String scope = String.format("test-scope-%4f", Math.random());
+        String topic = String.format("test-stream");
+        String controllerUri = "tcp://localhost:9090";
+
+        PravegaWriter<String> writer = null;
+        PravegaReader reader = null;
+        try {
+            writer = new PravegaWriter(scope, topic, controllerUri, new JavaSerializer<String>(), 1);
+            for (int i = 0; i < 10; i++) {
+                String message = "Message: " + i;
+                writer.writeEvent(message).join();
+                log.info("Wrote message: {}", message);
+            }
+
+            reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
+                    UUID.randomUUID().toString(), "readerId");
+
+            reader.seekToEnd();
+            assertNull(reader.readNext(200));
+
+            writer.writeEvent("Message after seekToEnd").join();
+            assertEquals("Message after seekToEnd", reader.readNext(200));
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
+
+
+
+    @Test
+    public void readerTailReadsOrig() {
+        String scope = "test-scope";
+        String topic = "test-stream-" + Math.random();
+        String controllerUri = "tcp://localhost:9090";
+
+        PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri, new JavaSerializer<String>(), 1);
+        for (int i = 0; i < 100; i++) {
+            String message = "Message: " + i;
+            writer.writeEvent(message).join();
+            log.info("Wrote message: {}", message);
+        }
+        String readerGroupName = UUID.randomUUID().toString();
+        String readerId = "reader";
+        try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
+                readerGroupName, readerId)) {
+            for (int i = 0; i < 2; i++) {
+                log.info("Reader read message: {}", reader.readNext(200));
+            }
+            reader.seekToEnd();
+            writer.writeEvent("Message after seekToEnd").join();
+
+            for (int i = 0; i < 20; i++) {
+                log.info("Reader read message: {}", reader.readNext(200));
+            }
+        }
+        writer.close();
     }
 }
