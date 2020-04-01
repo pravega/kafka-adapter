@@ -11,17 +11,11 @@ package io.pravega.adapters.kafka.client.dataaccess;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.pravega.client.ClientConfig;
-import io.pravega.client.EventStreamClientFactory;
-import io.pravega.client.admin.ReaderGroupManager;
 import io.pravega.client.admin.StreamInfo;
-import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.ReaderConfig;
-import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.Serializer;
-import io.pravega.client.stream.Stream;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PravegaReader<T> implements Reader<T> {
-
     private final String scope;
 
     private final List<String> streams = new ArrayList<>();
@@ -45,17 +38,12 @@ public class PravegaReader<T> implements Reader<T> {
 
     private final Serializer serializer;
 
-    private final String readerGroupName;
-    private final String readerId;
+    private final ReaderManager readerManager;
 
+    // Used for mocking
     @VisibleForTesting
     @Setter(AccessLevel.PACKAGE)
     private EventStreamReader<T> reader;
-    private ReaderGroupManager readerGroupManager;
-
-    private StreamManager streamManager;
-
-    private ReaderGroup readerGroup;
 
     public PravegaReader(@NonNull String scope, @NonNull List<String> streams, @NonNull String controllerUri,
                          @NonNull Serializer serializer, @NonNull String readerGroupName, @NonNull String readerId) {
@@ -63,8 +51,7 @@ public class PravegaReader<T> implements Reader<T> {
         this.streams.addAll(streams);
         this.controllerUri = controllerUri;
         this.serializer = serializer;
-        this.readerGroupName = readerGroupName;
-        this.readerId = readerId;
+        this.readerManager = new ReaderManager(readerGroupName, readerId);
     }
 
     public PravegaReader(@NonNull String scope, @NonNull String stream, @NonNull String controllerUri,
@@ -73,7 +60,7 @@ public class PravegaReader<T> implements Reader<T> {
     }
 
     private boolean isInitialized() {
-        return reader != null;
+        return this.reader != null;
     }
 
     public void init() {
@@ -83,24 +70,8 @@ public class PravegaReader<T> implements Reader<T> {
         ClientConfig clientConfig = ClientConfig.builder()
                 .controllerURI(URI.create(controllerUri))
                 .build();
-
-        ReaderGroupConfig.ReaderGroupConfigBuilder rgBuilder =
-                ReaderGroupConfig.builder().disableAutomaticCheckpoints();
-        for (String stream : this.streams) {
-            rgBuilder.stream(Stream.of(scope, stream));
-        }
-
-        ReaderGroupConfig readerGroupConfig = rgBuilder.build();
-
-        readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);
-        readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
-
-        readerGroup = readerGroupManager.getReaderGroup(this.readerGroupName);
-
-        reader = EventStreamClientFactory.withScope(scope, clientConfig)
-                .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
-
-        streamManager = StreamManager.create(clientConfig);
+        this.readerManager.initialize(this.streams, this.scope, clientConfig, this.serializer);
+        this.reader = this.readerManager.getReader();
     }
 
     @Override
@@ -111,7 +82,7 @@ public class PravegaReader<T> implements Reader<T> {
         List<T> result = new ArrayList<>();
         EventRead<T> event = null;
         do {
-            event = reader.readNextEvent(timeoutInMillis);
+            event = this.reader.readNextEvent(timeoutInMillis);
             if (event.getEvent() != null) {
                 result.add(event.getEvent());
             }
@@ -157,13 +128,13 @@ public class PravegaReader<T> implements Reader<T> {
         log.debug("seekToEnd() invoked");
         ReaderGroupConfig.ReaderGroupConfigBuilder builder = ReaderGroupConfig.builder();
         this.streams.stream().forEach(stream -> {
-            StreamInfo streamInfo = this.streamManager.getStreamInfo(this.scope, stream);
+            StreamInfo streamInfo = this.readerManager.getStreamManager().getStreamInfo(this.scope, stream);
             StreamCut tailStreamCut = streamInfo.getTailStreamCut();
             log.debug("tailStreamCut: {}", tailStreamCut);
             builder.stream(this.scope + "/" + stream, tailStreamCut);
             // builder.startFromStreamCuts()
         });
-        this.readerGroup.resetReaderGroup(builder.build());
+        this.readerManager.getReaderGroup().resetReaderGroup(builder.build());
     }
 
     @Override
@@ -173,12 +144,6 @@ public class PravegaReader<T> implements Reader<T> {
 
     @Override
     public void close() {
-        try {
-            reader.close();
-            readerGroupManager.close();
-            streamManager.close();
-        } catch (Exception e) {
-            log.warn("Encountered exception in cleaning up", e);
-        }
+        this.readerManager.close();
     }
 }

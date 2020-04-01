@@ -622,7 +622,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void close() {
-        close(Duration.ofMillis(Long.MAX_VALUE));
+        close(Duration.ofNanos(Long.MAX_VALUE));
     }
 
     @SneakyThrows
@@ -634,7 +634,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void close(Duration timeout) {
-        close(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        close(timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
 
     private void cleanup() {

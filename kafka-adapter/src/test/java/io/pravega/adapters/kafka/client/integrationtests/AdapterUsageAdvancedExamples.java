@@ -28,6 +28,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -328,6 +329,7 @@ public class AdapterUsageAdvancedExamples {
     }
 
     // TODO
+    @Ignore
     @Test
     public void tailReadsExample() throws ExecutionException, InterruptedException {
         String scope = Math.random() + "";
