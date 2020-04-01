@@ -19,23 +19,42 @@ import io.pravega.client.stream.ReaderGroup;
 import io.pravega.client.stream.ReaderGroupConfig;
 import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.Stream;
+
+import java.net.URI;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ReaderManager<T> {
-
-    private final String readerGroupName;
-    private final String readerId;
+class ReaderManager<T> {
 
     @Getter(AccessLevel.PACKAGE)
-    @Setter(AccessLevel.PACKAGE)
+    @NonNull
+    private final String scope;
+
+    @NonNull
+    private final String readerGroupName;
+
+    @NonNull
+    private final String readerId;
+
+    @NonNull
+    @Getter(AccessLevel.PACKAGE)
+    private final List<String> streamNames;
+
+    @NonNull
+    private final URI controllerUri;
+
+    @NonNull
+    private final Serializer<T> serializer;
+
+    @Getter(AccessLevel.PACKAGE)
     private EventStreamReader<T> reader;
+
     private ReaderGroupManager readerGroupManager;
 
     @Getter(AccessLevel.PACKAGE)
@@ -45,19 +64,23 @@ public class ReaderManager<T> {
     private ReaderGroup readerGroup;
 
     boolean isInitialized() {
-        return readerId != null;
+        return reader != null;
     }
 
-    public void initialize(List<String> streams, String scope, ClientConfig clientConfig, Serializer<T> serializer) {
+    public void initialize() {
         if (isInitialized()) {
             return;
         }
-
         ReaderGroupConfig.ReaderGroupConfigBuilder rgBuilder =
                 ReaderGroupConfig.builder().disableAutomaticCheckpoints();
-        for (String stream : streams) {
+
+        for (String stream : this.streamNames) {
             rgBuilder.stream(Stream.of(scope, stream));
         }
+
+        ClientConfig clientConfig = ClientConfig.builder()
+                .controllerURI(controllerUri)
+                .build();
 
         ReaderGroupConfig readerGroupConfig = rgBuilder.build();
         readerGroupManager = ReaderGroupManager.withScope(scope, clientConfig);

@@ -10,7 +10,6 @@
 package io.pravega.adapters.kafka.client.dataaccess;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.pravega.client.ClientConfig;
 import io.pravega.client.admin.StreamInfo;
 import io.pravega.client.stream.EventRead;
 import io.pravega.client.stream.EventStreamReader;
@@ -30,13 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PravegaReader<T> implements Reader<T> {
-    private final String scope;
-
-    private final List<String> streams = new ArrayList<>();
-
-    private final String controllerUri;
-
-    private final Serializer serializer;
 
     private final ReaderManager readerManager;
 
@@ -47,11 +39,8 @@ public class PravegaReader<T> implements Reader<T> {
 
     public PravegaReader(@NonNull String scope, @NonNull List<String> streams, @NonNull String controllerUri,
                          @NonNull Serializer serializer, @NonNull String readerGroupName, @NonNull String readerId) {
-        this.scope = scope;
-        this.streams.addAll(streams);
-        this.controllerUri = controllerUri;
-        this.serializer = serializer;
-        this.readerManager = new ReaderManager(readerGroupName, readerId);
+        this.readerManager = new ReaderManager(scope, readerGroupName, readerId, streams, URI.create(controllerUri),
+                serializer);
     }
 
     public PravegaReader(@NonNull String scope, @NonNull String stream, @NonNull String controllerUri,
@@ -67,10 +56,7 @@ public class PravegaReader<T> implements Reader<T> {
         if (isInitialized()) {
             return;
         }
-        ClientConfig clientConfig = ClientConfig.builder()
-                .controllerURI(URI.create(controllerUri))
-                .build();
-        this.readerManager.initialize(this.streams, this.scope, clientConfig, this.serializer);
+        this.readerManager.initialize();
         this.reader = this.readerManager.getReader();
     }
 
@@ -126,20 +112,21 @@ public class PravegaReader<T> implements Reader<T> {
             init();
         }
         log.debug("seekToEnd() invoked");
+
         ReaderGroupConfig.ReaderGroupConfigBuilder builder = ReaderGroupConfig.builder();
-        this.streams.stream().forEach(stream -> {
-            StreamInfo streamInfo = this.readerManager.getStreamManager().getStreamInfo(this.scope, stream);
+        this.readerManager.getStreamNames().forEach(stream -> {
+            StreamInfo streamInfo = this.readerManager.getStreamManager().getStreamInfo(
+                    this.readerManager.getScope(), (String) stream);
             StreamCut tailStreamCut = streamInfo.getTailStreamCut();
             log.debug("tailStreamCut: {}", tailStreamCut);
-            builder.stream(this.scope + "/" + stream, tailStreamCut);
-            // builder.startFromStreamCuts()
+            builder.stream(this.readerManager.getScope() + "/" + stream, tailStreamCut);
         });
         this.readerManager.getReaderGroup().resetReaderGroup(builder.build());
     }
 
     @Override
     public List<String> getStreams() {
-        return this.streams;
+        return this.readerManager.getStreamNames();
     }
 
     @Override
