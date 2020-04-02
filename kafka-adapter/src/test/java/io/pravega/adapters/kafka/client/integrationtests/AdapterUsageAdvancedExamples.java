@@ -345,12 +345,10 @@ public class AdapterUsageAdvancedExamples {
         Properties consumerConfig = ConfigMaker.makeConsumerProperties(null, controllerUri, consumerGroupId, clientId);
         try (Consumer<String, String> consumerOfGroup1 = new PravegaKafkaConsumer(consumerConfig)) {
             consumerOfGroup1.subscribe(Arrays.asList(topic));
-
             consumerOfGroup1.seekToEnd(Arrays.asList(new TopicPartition(topic, 0)));
             ConsumerRecords<String, String> recordSet1 = consumerOfGroup1.poll(Duration.ofMillis(5000));
 
-            // assertEquals(0, recordSet1.count());
-
+            assertEquals(0, recordSet1.count());
             for (ConsumerRecord<String, String> record : recordSet1) {
                 String readMessage = record.value();
                 log.info("Consumed a record containing value recordSet1: {}", readMessage);
