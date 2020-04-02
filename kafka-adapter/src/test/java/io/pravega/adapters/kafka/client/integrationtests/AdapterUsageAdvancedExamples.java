@@ -12,6 +12,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.testutils.ConfigExtractor;
 import io.pravega.adapters.kafka.client.testutils.ConfigMaker;
 import io.pravega.client.stream.impl.JavaSerializer;
 
@@ -42,7 +43,7 @@ public class AdapterUsageAdvancedExamples {
         String topic = "test-topic-" + Math.random();
 
         Properties producerConfig = new Properties();
-        producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        producerConfig.put("bootstrap.servers", ConfigExtractor.extractBootstrapServers());
         producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         producerConfig.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         producerConfig.put("pravega.scope", scopeName);
@@ -86,7 +87,7 @@ public class AdapterUsageAdvancedExamples {
     public void testReceivesPartialSetOfMessagesUponTimeout() {
         String scopeName = "partial-messages" + Math.random();
         String topicName = "test-topic-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         Properties producerConfig = new Properties();
         producerConfig.put("bootstrap.servers", controllerUri);
@@ -144,7 +145,7 @@ public class AdapterUsageAdvancedExamples {
     public void testReceivesIncrementalMessagesOnPoll() {
         String scopeName = "incremental-polls-" + Math.random();
         String topicName = "test-topic-";
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         Properties producerConfig = new Properties();
         producerConfig.put("bootstrap.servers", controllerUri);
@@ -222,7 +223,7 @@ public class AdapterUsageAdvancedExamples {
     public void testReceivesIncrementalMessagesOnPollFromDifferentConsumersHavingSameName() {
         String scope = "incremental-polls-" + Math.random();
         String topic = "test-topic-";
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
         String consumerGroupId = "test-cg";
         String clientId = "test-cid";
 
@@ -286,7 +287,7 @@ public class AdapterUsageAdvancedExamples {
         String scope = "multiple-topics" + Math.random();
         String topic1 = "test-topic-1";
         String topic2 = "test-topic-2";
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
         String consumerGroupId = "test-cg";
         String clientId = "test-cid";
 
@@ -328,9 +329,9 @@ public class AdapterUsageAdvancedExamples {
     }
 
     @Test
-    public void tailReadsExample() throws ExecutionException, InterruptedException {
+    public void testTailReads() throws ExecutionException, InterruptedException {
         String topic = "test-topic" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
         String consumerGroupId = "cgId";
         String clientId = "clientId";
 

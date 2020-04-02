@@ -11,6 +11,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.testutils.ConfigExtractor;
 import io.pravega.adapters.kafka.client.testutils.ConfigMaker;
 import io.pravega.client.stream.impl.JavaSerializer;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,7 @@ public class TransactionExamples {
     public void transactionalProducer() {
         String scope = "tx-scope-" + Math.random();
         String topic = "test-topic";
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
         String consumerGroupId = "test-cg";
         String clientId = "test-cid";
 

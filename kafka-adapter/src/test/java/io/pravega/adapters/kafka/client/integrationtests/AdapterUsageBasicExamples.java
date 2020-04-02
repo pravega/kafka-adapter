@@ -14,6 +14,7 @@ import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.config.PravegaConfig;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaWriter;
+import io.pravega.adapters.kafka.client.testutils.ConfigExtractor;
 import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.time.Duration;
@@ -53,7 +54,7 @@ public class AdapterUsageBasicExamples {
         String topic = "tpmkc-" + Math.random();
         String message = "test-message-1";
 
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, ConfigExtractor.extractBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
@@ -78,7 +79,7 @@ public class AdapterUsageBasicExamples {
 
         String scope = "test-scope";
         String topic = "tpkpc-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
         String message = "test-message-1";
 
         producerConfig.put(PravegaConfig.CONTROLLER_URI, controllerUri);
@@ -104,7 +105,7 @@ public class AdapterUsageBasicExamples {
     public void testProduceThenConsumeWithMinimalKafkaPravegaConfig() throws ExecutionException, InterruptedException {
         String topic = "tpmkc-" + Math.random();
         String message = "test-message-1";
-        String bootstrapServers = "tcp://localhost:9090";
+        String bootstrapServers = ConfigExtractor.extractBootstrapServers();
 
         // Produce events
         Properties producerConfig = new Properties();
@@ -149,7 +150,7 @@ public class AdapterUsageBasicExamples {
     public void testConsumeOnly() {
         String topic = "tpmkc-0.11596792843929993";
         String message = "test-message-1";
-        String bootstrapServers = "tcp://localhost:9090";
+        String bootstrapServers = ConfigExtractor.extractBootstrapServers();
 
         Properties consumerConfig = new Properties();
         consumerConfig.put("bootstrap.servers", bootstrapServers);
@@ -189,7 +190,7 @@ public class AdapterUsageBasicExamples {
     public void testProduceThenConsumeAsynchronously() {
         String topic = "tpc-" + Math.random();
         String message = "test-message-1";
-        String bootstrapServers = "tcp://localhost:9090";
+        String bootstrapServers = ConfigExtractor.extractBootstrapServers();
 
         // Produce events
         Properties producerConfig = new Properties();
@@ -217,7 +218,7 @@ public class AdapterUsageBasicExamples {
         // Keeping scope and topic names random to eliminate the chances of it already being present.
         String scopeName = "multiple-messages-" + Math.random();
         String topicName = "test-topic-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         // First let's ensure that the scope and topic are created
         try (PravegaWriter writer = new PravegaWriter(scopeName, topicName, controllerUri,
@@ -246,7 +247,7 @@ public class AdapterUsageBasicExamples {
         // Keeping scope and topic names random to eliminate the chances of it already being present.
         String scopeName = "multisegment-" + Math.random();
         String topicName = "test-topic";
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         // Produce events
         Properties producerConfig = new Properties();

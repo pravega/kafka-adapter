@@ -12,6 +12,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 import io.pravega.adapters.kafka.client.consumer.PravegaKafkaConsumer;
 import io.pravega.adapters.kafka.client.producer.PravegaKafkaProducer;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
+import io.pravega.adapters.kafka.client.testutils.ConfigExtractor;
 import io.pravega.adapters.kafka.client.testutils.Person;
 import io.pravega.adapters.kafka.client.testutils.PersonSerializer;
 
@@ -49,9 +50,9 @@ public class CustomSerializationUsageExamples {
         Properties producerConfig = new Properties();
         String topic = "test-topic-" + Math.random();
 
-        producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        producerConfig.put("bootstrap.servers", ConfigExtractor.extractBootstrapServers());
         producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+        producerConfig.put("value.serializer", "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
         producerConfig.put("pravega.scope", SCOPE_NAME);
 
         Producer<String, Person> producer = new PravegaKafkaProducer<>(producerConfig);
@@ -63,12 +64,12 @@ public class CustomSerializationUsageExamples {
 
         // Consume events
         Properties consumerConfig = new Properties();
-        consumerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        consumerConfig.put("bootstrap.servers", ConfigExtractor.extractBootstrapServers());
         consumerConfig.put("group.id", UUID.randomUUID().toString());
         consumerConfig.put("client.id", "your_client_id");
         consumerConfig.put("auto.offset.reset", "earliest");
         consumerConfig.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerConfig.put("value.deserializer", "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+        consumerConfig.put("value.deserializer", "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
         consumerConfig.put("pravega.scope", SCOPE_NAME);
 
         Consumer<String, Person> consumer = new PravegaKafkaConsumer(consumerConfig);
@@ -91,9 +92,9 @@ public class CustomSerializationUsageExamples {
         Properties producerConfig = new Properties();
         String topic = "test-topic-" + Math.random();
 
-        producerConfig.put("bootstrap.servers", "tcp://localhost:9090");
+        producerConfig.put("bootstrap.servers", ConfigExtractor.extractBootstrapServers());
         producerConfig.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerConfig.put("value.serializer", "io.pravega.adapters.kafka.client.utils.PersonSerializer");
+        producerConfig.put("value.serializer", "io.pravega.adapters.kafka.client.testutils.PersonSerializer");
         producerConfig.put("pravega.scope", SCOPE_NAME);
 
         Producer<String, Person> producer = new PravegaKafkaProducer<>(producerConfig);
@@ -118,7 +119,7 @@ public class CustomSerializationUsageExamples {
         String topic = "test-topic-0.8010902196015256";
 
         Properties consumerConfig = new Properties();
-        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "tcp://localhost:9090");
+        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ConfigExtractor.extractBootstrapServers());
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
         consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, "your_client_id");
         consumerConfig.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

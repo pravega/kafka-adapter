@@ -11,6 +11,7 @@ package io.pravega.adapters.kafka.client.integrationtests;
 
 import io.pravega.adapters.kafka.client.dataaccess.PravegaReader;
 import io.pravega.adapters.kafka.client.dataaccess.PravegaWriter;
+import io.pravega.adapters.kafka.client.testutils.ConfigExtractor;
 import io.pravega.client.ClientConfig;
 import io.pravega.client.EventStreamClientFactory;
 import io.pravega.client.admin.StreamManager;
@@ -37,7 +38,7 @@ public class ReaderAndWriterUsageExamples {
     public void writerAndReaderExample() {
         String scope = "test-scope";
         String topic = "test-stream-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         try (PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri,
                 new JavaSerializer<String>(), 1)) {
@@ -59,7 +60,7 @@ public class ReaderAndWriterUsageExamples {
     public void readStartsFromLastPositionIfReaderGroupIsSame() {
         String scope = "test-scope";
         String topic = "test-stream-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         try (PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri,
                 new JavaSerializer<String>(), 1)) {
@@ -97,7 +98,7 @@ public class ReaderAndWriterUsageExamples {
         final String scope = "rwna-" + Math.random();
         final String stream1 = "test-stream-1";
         final String stream2 = "test-stream-2";
-        final String controllerUri = "tcp://localhost:9090";
+        final String controllerUri = ConfigExtractor.extractBootstrapServers();
         final int numSegments = 1;
         final String writeEvent1 = "This is event 1 in stream 1";
         final String writeEvent2 = "This is event 2 in stream 1";
@@ -159,7 +160,7 @@ public class ReaderAndWriterUsageExamples {
     public void readerTailReads() {
         String scope = String.format("test-scope-%4f", Math.random());
         String topic = String.format("test-stream");
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         PravegaWriter<String> writer = null;
         PravegaReader<String> reader = null;
@@ -191,7 +192,7 @@ public class ReaderAndWriterUsageExamples {
     public void readerTailReadsOrig() {
         String scope = "test-scope";
         String topic = "test-stream-" + Math.random();
-        String controllerUri = "tcp://localhost:9090";
+        String controllerUri = ConfigExtractor.extractBootstrapServers();
 
         PravegaWriter<String> writer = new PravegaWriter(scope, topic, controllerUri, new JavaSerializer<String>(), 1);
         for (int i = 0; i < 100; i++) {
