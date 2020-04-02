@@ -63,6 +63,8 @@ class ReaderManager<T> {
     @Getter(AccessLevel.PACKAGE)
     private ReaderGroup readerGroup;
 
+    private EventStreamClientFactory clientFactory;
+
     boolean isInitialized() {
         return reader != null;
     }
@@ -87,9 +89,15 @@ class ReaderManager<T> {
         readerGroupManager.createReaderGroup(readerGroupName, readerGroupConfig);
         readerGroup = readerGroupManager.getReaderGroup(this.readerGroupName);
 
-        reader = EventStreamClientFactory.withScope(scope, clientConfig)
-                .createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
+        clientFactory = EventStreamClientFactory.withScope(scope, clientConfig);
+
+        reader = clientFactory.createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
         streamManager = StreamManager.create(clientConfig);
+    }
+
+    public void reset(ReaderGroupConfig config) {
+        this.readerGroup.resetReaderGroup(config);
+        this.reader = clientFactory.createReader(readerId, readerGroupName, serializer, ReaderConfig.builder().build());
     }
 
     public void close() {

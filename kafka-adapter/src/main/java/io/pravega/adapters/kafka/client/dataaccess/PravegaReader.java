@@ -52,7 +52,7 @@ public class PravegaReader<T> implements Reader<T> {
         return this.reader != null;
     }
 
-    public void init() {
+    public void initIfNotInitialized() {
         if (isInitialized()) {
             return;
         }
@@ -62,9 +62,7 @@ public class PravegaReader<T> implements Reader<T> {
 
     @Override
     public List<T> readAll(long timeoutInMillis) {
-        if (!isInitialized()) {
-            init();
-        }
+        initIfNotInitialized();
         List<T> result = new ArrayList<>();
         EventRead<T> event = null;
         do {
@@ -78,17 +76,13 @@ public class PravegaReader<T> implements Reader<T> {
 
     @Override
     public EventRead<T> readNextEvent(long timeoutInMillis) {
-        if (!isInitialized()) {
-            init();
-        }
+        initIfNotInitialized();
         return this.reader.readNextEvent(timeoutInMillis);
     }
 
     @Override
     public T tryReadNext(long timeinMillis) {
-        if (!isInitialized()) {
-            init();
-        }
+        initIfNotInitialized();
         EventRead<T> event = this.reader.readNextEvent(timeinMillis);
         if (event != null) {
             return event.getEvent();
@@ -108,20 +102,21 @@ public class PravegaReader<T> implements Reader<T> {
 
     @Override
     public void seekToEnd() {
-        if (!isInitialized()) {
-            init();
-        }
         log.debug("seekToEnd() invoked");
+        initIfNotInitialized();
+
+        this.readerManager.getReaderGroup().getGroupName();
 
         ReaderGroupConfig.ReaderGroupConfigBuilder builder = ReaderGroupConfig.builder();
+
         this.readerManager.getStreamNames().forEach(stream -> {
-            StreamInfo streamInfo = this.readerManager.getStreamManager().getStreamInfo(
-                    this.readerManager.getScope(), (String) stream);
+            StreamInfo streamInfo = this.readerManager.getStreamManager().getStreamInfo(this.readerManager.getScope(),
+                    (String) stream);
             StreamCut tailStreamCut = streamInfo.getTailStreamCut();
             log.debug("tailStreamCut: {}", tailStreamCut);
             builder.stream(this.readerManager.getScope() + "/" + stream, tailStreamCut);
         });
-        this.readerManager.getReaderGroup().resetReaderGroup(builder.build());
+        this.readerManager.reset(builder.build());
     }
 
     @Override

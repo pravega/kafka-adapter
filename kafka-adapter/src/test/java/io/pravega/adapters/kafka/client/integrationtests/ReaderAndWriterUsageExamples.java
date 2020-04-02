@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 @Slf4j
 public class ReaderAndWriterUsageExamples {
@@ -163,7 +162,7 @@ public class ReaderAndWriterUsageExamples {
         String controllerUri = "tcp://localhost:9090";
 
         PravegaWriter<String> writer = null;
-        PravegaReader reader = null;
+        PravegaReader<String> reader = null;
         try {
             writer = new PravegaWriter(scope, topic, controllerUri, new JavaSerializer<String>(), 1);
             for (int i = 0; i < 10; i++) {
@@ -171,15 +170,13 @@ public class ReaderAndWriterUsageExamples {
                 writer.writeEvent(message).join();
                 log.info("Wrote message: {}", message);
             }
-
             reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                     UUID.randomUUID().toString(), "readerId");
-
             reader.seekToEnd();
-            assertNull(reader.readNext(200));
 
             writer.writeEvent("Message after seekToEnd").join();
-            assertEquals("Message after seekToEnd", reader.readNext(200));
+            String readMessage = reader.readNext(2000);
+            assertEquals("Message after seekToEnd", readMessage);
         } finally {
             if (writer != null) {
                 writer.close();
@@ -189,8 +186,6 @@ public class ReaderAndWriterUsageExamples {
             }
         }
     }
-
-
 
     @Test
     public void readerTailReadsOrig() {

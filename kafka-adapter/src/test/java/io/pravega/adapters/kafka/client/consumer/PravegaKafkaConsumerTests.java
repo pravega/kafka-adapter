@@ -255,7 +255,7 @@ public class PravegaKafkaConsumerTests {
             topics.add("topic" + i);
         }
         consumer.subscribe(topics);
-        consumer.close(Duration.ofNanos(10));
+        consumer.close(Duration.ofNanos(1));
     }
 
     @Test

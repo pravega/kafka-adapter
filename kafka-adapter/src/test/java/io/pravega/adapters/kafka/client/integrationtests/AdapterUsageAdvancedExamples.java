@@ -28,7 +28,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -328,46 +327,45 @@ public class AdapterUsageAdvancedExamples {
         }
     }
 
-    // TODO
-    @Ignore
     @Test
     public void tailReadsExample() throws ExecutionException, InterruptedException {
-        String scope = Math.random() + "";
-        String topic = "test-topic";
+        String topic = "test-topic" + Math.random();
         String controllerUri = "tcp://localhost:9090";
         String consumerGroupId = "cgId";
         String clientId = "clientId";
 
         Properties producerConfig =
-                ConfigMaker.makeProducerProperties(scope, controllerUri, null, null);
+                ConfigMaker.makeProducerProperties(null, controllerUri, null, null);
         Producer<String, String> producer = new PravegaKafkaProducer<>(producerConfig);
         for (int i = 0; i < 5; i++) {
-             ProducerRecord<String, String> producerRecord =
-                       new ProducerRecord<>(topic, 1, "test-key", "message-" + i);
+             ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, "message-" + i);
              producer.send(producerRecord).get();
         }
 
-        Properties consumerConfig = ConfigMaker.makeConsumerProperties(scope, controllerUri, consumerGroupId, clientId);
-        try (Consumer<String, String> consumer = new PravegaKafkaConsumer(consumerConfig)) {
-            consumer.subscribe(Arrays.asList(topic));
-            consumer.seekToEnd(Arrays.asList(new TopicPartition(topic, 0)));
+        Properties consumerConfig = ConfigMaker.makeConsumerProperties(null, controllerUri, consumerGroupId, clientId);
+        try (Consumer<String, String> consumerOfGroup1 = new PravegaKafkaConsumer(consumerConfig)) {
+            consumerOfGroup1.subscribe(Arrays.asList(topic));
 
-            ConsumerRecords<String, String> records1 = consumer.poll(Duration.ofMillis(5000));
-            for (ConsumerRecord<String, String> record : records1) {
+            consumerOfGroup1.seekToEnd(Arrays.asList(new TopicPartition(topic, 0)));
+            ConsumerRecords<String, String> recordSet1 = consumerOfGroup1.poll(Duration.ofMillis(5000));
+
+            // assertEquals(0, recordSet1.count());
+
+            for (ConsumerRecord<String, String> record : recordSet1) {
+                String readMessage = record.value();
+                log.info("Consumed a record containing value recordSet1: {}", readMessage);
+            }
+
+            producer.send(new ProducerRecord<>(topic, "message-new-" + 6)).get();
+            producer.send(new ProducerRecord<>(topic, "message-new-" + 7)).get();
+
+            ConsumerRecords<String, String> recordSet2 = consumerOfGroup1.poll(Duration.ofMillis(5000));
+            assertEquals(2, recordSet2.count());
+
+            for (ConsumerRecord<String, String> record : recordSet2) {
                 String readMessage = record.value();
                 log.info("Consumed a record containing value: {}", readMessage);
             }
-
-            producer.send(new ProducerRecord<>(topic, 1, "test-key", "message-" + 6)).get();
-            producer.send(new ProducerRecord<>(topic, 1, "test-key", "message-" + 7)).get();
-
-            ConsumerRecords<String, String> records2 = consumer.poll(Duration.ofMillis(5000));
-            for (ConsumerRecord<String, String> record : records2) {
-                String readMessage = record.value();
-                log.info("Consumed a record containing value: {}", readMessage);
-            }
-
-            // assertEquals(4, records.count());
         }
     }
 
