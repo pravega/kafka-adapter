@@ -10,6 +10,8 @@
 package io.pravega.adapters.kafka.client.config;
 
 import io.pravega.client.stream.Serializer;
+import io.pravega.client.stream.impl.ByteArraySerializer;
+import io.pravega.client.stream.impl.ByteBufferSerializer;
 import io.pravega.client.stream.impl.JavaSerializer;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -76,10 +78,32 @@ public abstract class PravegaKafkaConfig {
         }
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private Serializer instantiateSerdeFromClassName(@NonNull String fqClassName) {
         if (fqClassName.equals("org.apache.kafka.common.serialization.StringSerializer") ||
                 fqClassName.equals("org.apache.kafka.common.serialization.StringDeserializer")) {
             return new JavaSerializer<String>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.IntegerSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.IntegerDeserializer")) {
+            return new JavaSerializer<Integer>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.FloatSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.FloatDeserializer")) {
+            return new JavaSerializer<Float>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.LongSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.LongDeserializer")) {
+            return new JavaSerializer<Long>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.DoubleSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.DoubleDeserializer")) {
+            return new JavaSerializer<Double>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.ShortSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.ShortDeserializer")) {
+            return new JavaSerializer<Double>();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.ByteArraySerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.ByteArrayDeserializer")) {
+            return new ByteArraySerializer();
+        } else if (fqClassName.equals("org.apache.kafka.common.serialization.ByteBufferSerializer") ||
+                fqClassName.equals("org.apache.kafka.common.serialization.ByteBufferDeserializer")) {
+            return new ByteBufferSerializer();
         } else {
             try {
                 return (Serializer) Class.forName(fqClassName).newInstance();
