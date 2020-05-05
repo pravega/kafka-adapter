@@ -27,10 +27,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 import io.pravega.adapters.kafka.client.dataaccess.Reader;
+import io.pravega.adapters.kafka.client.testutils.FakeEvent;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
@@ -43,12 +45,11 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-// import static org.mockito.Mockito.mock;
-// import static org.mockito.Mockito.times;
-// import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 public class PravegaKafkaConsumerTests {
@@ -457,6 +458,59 @@ public class PravegaKafkaConsumerTests {
         consumer.seekToEnd(Arrays.asList(new TopicPartition("test-topic", 0)));
         verify(reader, times(1)).seekToEnd();
     }
+
+    @Test
+    public void readRecordsWhenDataSourceHasEvents() {
+        @Cleanup
+        PravegaKafkaConsumer<String, String> consumer = new PravegaKafkaConsumer<>(prepareDummyConsumerConfig());
+
+        Reader<String> reader = mock(Reader.class);
+        Map<String, Reader<String>> readerByStream = new HashMap<>();
+        readerByStream.put("test-topic", reader);
+        consumer.setReadersByStream(readerByStream);
+
+        when(reader.readNextEvent(anyLong())).thenReturn(new FakeEvent("event message"));
+
+        ConsumerRecords<String, String> records = consumer.read(100, 5);
+        assertNotNull(records);
+        assertTrue(records.count() > 0);
+    }
+
+    @Test
+    public void readRecordsWhenDataSourceHasNoEvents() {
+        @Cleanup
+        PravegaKafkaConsumer<String, String> consumer = new PravegaKafkaConsumer<>(prepareDummyConsumerConfig());
+
+        Reader<String> reader = mock(Reader.class);
+        Map<String, Reader<String>> readerByStream = new HashMap<>();
+        readerByStream.put("test-topic", reader);
+        consumer.setReadersByStream(readerByStream);
+
+        when(reader.readNextEvent(anyLong())).thenReturn(null);
+
+        ConsumerRecords<String, String> records = consumer.read(100, 5);
+        assertNotNull(records);
+        assertEquals(0, records.count());
+    }
+
+    @Test
+    public void readRecordsWhenDataSourceHasEventsWithNullMessages() {
+        @Cleanup
+        PravegaKafkaConsumer<String, String> consumer = new PravegaKafkaConsumer<>(prepareDummyConsumerConfig());
+
+        Reader<String> reader = mock(Reader.class);
+        Map<String, Reader<String>> readerByStream = new HashMap<>();
+        readerByStream.put("test-topic", reader);
+        consumer.setReadersByStream(readerByStream);
+
+        when(reader.readNextEvent(anyLong())).thenReturn(new FakeEvent(null));
+
+        ConsumerRecords<String, String> records = consumer.read(100, 5);
+        assertNotNull(records);
+        assertEquals(0, records.count());
+    }
+
+
 
     //region Private methods
     private Properties prepareDummyConsumerConfig() {
