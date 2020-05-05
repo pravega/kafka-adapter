@@ -9,16 +9,22 @@
  */
 package io.pravega.adapters.kafka.client.dataaccess;
 
+import io.pravega.client.stream.Serializer;
+import io.pravega.client.stream.impl.ByteArraySerializer;
 import io.pravega.client.stream.impl.JavaSerializer;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.junit.Test;
 
 import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
 import static org.junit.Assert.assertFalse;
 
 public class ReaderManagerTests {
+
+    private Serializer dummySerializer = new ByteArraySerializer();
 
     @Test
     public void nullArgumentsToCtorThrowsException() {
@@ -29,29 +35,36 @@ public class ReaderManagerTests {
     }
 
     @Test
-    public void nullArgumentsToInitializeThrowsException() {
-        /*ReaderManager<String> objectUnderTest = new ReaderManager<>("dummyReaderGroupName",
-                "dummyReaderId");
-
+    public void ctorThrowsExceptionForNullArguments() {
         assertThrows("NullPointerException did not occur.",
-                () -> objectUnderTest.initialize(null, "scope", ClientConfig.builder().build(),
-                        new JavaSerializer<>()),
+                () -> new ReaderManager<>(null, "rgName",
+                        "readerId", Arrays.asList("stream"), URI.create("controllerUri"), dummySerializer),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
-                () -> objectUnderTest.initialize(new ArrayList<>(), null, ClientConfig.builder().build(),
-                        new JavaSerializer<>()),
+                () -> new ReaderManager<>("scope", null,
+                        "readerId", Arrays.asList("stream"), URI.create("controllerUri"), dummySerializer),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
-                () -> objectUnderTest.initialize(new ArrayList<>(), "scope", null,
-                        new JavaSerializer<>()),
+                () -> new ReaderManager<>("scope", "rgName",
+                        null, Arrays.asList("stream"), URI.create("controllerUri"), dummySerializer),
                 e -> e instanceof NullPointerException);
 
         assertThrows("NullPointerException did not occur.",
-                () -> objectUnderTest.initialize(new ArrayList<>(), "scope", ClientConfig.builder().build(),
-                        null),
-                e -> e instanceof NullPointerException);*/
+                () -> new ReaderManager<>("scope", "rgName",
+                        "readerId", null, URI.create("controllerUri"), dummySerializer),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("NullPointerException did not occur.",
+                () -> new ReaderManager<>("scope", "rgName",
+                        "readerId", Arrays.asList("stream"), null, dummySerializer),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("NullPointerException did not occur.",
+                () -> new ReaderManager<>("scope", "rgName",
+                        "readerId", Arrays.asList("stream"), URI.create("controllerUri"), null),
+                e -> e instanceof NullPointerException);
     }
 
     @Test

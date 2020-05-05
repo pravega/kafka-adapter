@@ -67,10 +67,10 @@ public class PravegaReader<T> implements Reader<T> {
         EventRead<T> event = null;
         do {
             event = this.reader.readNextEvent(timeoutInMillis);
-            if (event.getEvent() != null) {
+            if (event != null && event.getEvent() != null) {
                 result.add(event.getEvent());
             }
-        } while (event.getEvent() != null);
+        } while (event != null && event.getEvent() != null);
         return result;
     }
 
@@ -78,26 +78,6 @@ public class PravegaReader<T> implements Reader<T> {
     public EventRead<T> readNextEvent(long timeoutInMillis) {
         initIfNotInitialized();
         return this.reader.readNextEvent(timeoutInMillis);
-    }
-
-    @Override
-    public T tryReadNext(long timeinMillis) {
-        initIfNotInitialized();
-        EventRead<T> event = this.reader.readNextEvent(timeinMillis);
-        if (event != null) {
-            return event.getEvent();
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    public T readNext(long timeinMillis) {
-        T result = tryReadNext(timeinMillis);
-        if (result == null) {
-            throw new IllegalStateException("No Event");
-        }
-        return result;
     }
 
     @Override

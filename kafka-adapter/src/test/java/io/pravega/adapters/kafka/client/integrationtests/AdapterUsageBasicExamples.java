@@ -69,7 +69,7 @@ public class AdapterUsageBasicExamples {
         try (PravegaReader<String> reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic,
                 "tcp://localhost:9090", new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext(200));
+            assertEquals(message, reader.readNextEvent(200).getEvent());
         }
     }
 
@@ -97,7 +97,7 @@ public class AdapterUsageBasicExamples {
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri,
                 new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext(200));
+            assertEquals(message, reader.readNextEvent(200).getEvent());
         }
     }
 
@@ -163,7 +163,7 @@ public class AdapterUsageBasicExamples {
         // First let's make sure that the event is actually there in the stream.
         try (PravegaReader reader = new PravegaReader(PravegaConfig.DEFAULT_SCOPE, topic,
                 bootstrapServers, new JavaSerializer<String>(), UUID.randomUUID().toString(), "readerId")) {
-            assertEquals(message, reader.readNext(200));
+            assertEquals(message, reader.readNextEvent(200).getEvent());
             log.info("Found expected message in in scope/stream {}/{}", PravegaConfig.DEFAULT_SCOPE,
                     topic);
         }

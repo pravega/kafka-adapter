@@ -59,7 +59,7 @@ public class PrimitiveSerializationExamples {
 
         try (PravegaReader<Integer> reader = new PravegaReader<>(SCOPE_NAME, topic, "tcp://localhost:9090",
                 new JavaSerializer<Integer>(), UUID.randomUUID().toString(), "readerId")) {
-            Integer readInteger = reader.readNext(200);
+            Integer readInteger = reader.readNextEvent(200).getEvent();
             log.info("Read Person: {}", readInteger);
             assertEquals(20, readInteger.intValue());
         }

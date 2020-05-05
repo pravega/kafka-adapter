@@ -9,25 +9,58 @@
  */
 package io.pravega.adapters.kafka.client.dataaccess;
 
-import io.pravega.client.stream.EventPointer;
-import io.pravega.client.stream.EventRead;
+import io.pravega.adapters.kafka.client.testutils.FakeEvent;
 import io.pravega.client.stream.EventStreamReader;
-import io.pravega.client.stream.Position;
+import io.pravega.client.stream.Serializer;
+import io.pravega.client.stream.impl.ByteArraySerializer;
 import io.pravega.client.stream.impl.JavaSerializer;
-import lombok.RequiredArgsConstructor;
 import org.junit.Test;
 
+import java.util.List;
+
+import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PravegaReaderTests {
 
+    private Serializer dummySerializer = new ByteArraySerializer();
+
+    @Test
+    public void ctorThrowsExceptionWhenInputHasNull() {
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>(null, "stream", "controlleruri", dummySerializer, "rgName", "readerId"),
+                e -> e instanceof NullPointerException);
+
+        String stream = null;
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>("scope", stream, "controlleruri", dummySerializer, "rgName", "readerId"),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>("scope", "stream", null, dummySerializer, "rgName", "readerId"),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>("scope", "stream", "controlleruri", null, "rgName", "readerId"),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>("scope", "stream", "controlleruri", dummySerializer, null, "readerId"),
+                e -> e instanceof NullPointerException);
+
+        assertThrows("Didn't encounter NullPointerException.",
+                () -> new PravegaReader<>("scope", "stream", "controlleruri", dummySerializer, "rgName", null),
+                e -> e instanceof NullPointerException);
+    }
+
     @Test
     public void readsAreDelegatedToEventReader() {
         EventStreamReader<String> mockInternalReader = mock(EventStreamReader.class);
-        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(new FakeEventRead<String>("test-message"));
+        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(new FakeEvent<String>("test-message"));
 
         PravegaReader<String> reader = dummyReader();
         reader.setReader(mockInternalReader);
@@ -35,39 +68,40 @@ public class PravegaReaderTests {
         assertEquals("test-message", reader.readNextEvent(100).getEvent());
     }
 
+    @Test
+    public void readAllReturnsAllEventsUntilNullEvent() {
+        EventStreamReader<String> mockInternalReader = mock(EventStreamReader.class);
+        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(
+                new FakeEvent<String>("test-message"),
+                new FakeEvent<String>("test-message"),
+                null);
+
+        PravegaReader<String> reader = dummyReader();
+        reader.setReader(mockInternalReader);
+
+        List<String> readEvents = reader.readAll(200);
+        assertNotNull(readEvents);
+        assertEquals(2, readEvents.size());
+    }
+
+    @Test
+    public void readAllReturnsAllEventsUntilEventWithNullMsg() {
+        EventStreamReader<String> mockInternalReader = mock(EventStreamReader.class);
+        when(mockInternalReader.readNextEvent(anyLong())).thenReturn(
+                new FakeEvent<String>("test-message"),
+                new FakeEvent<String>("test-message"),
+                new FakeEvent<>(null));
+
+        PravegaReader<String> reader = dummyReader();
+        reader.setReader(mockInternalReader);
+
+        List<String> readEvents = reader.readAll(200);
+        assertNotNull(readEvents);
+        assertEquals(2, readEvents.size());
+    }
+
     private PravegaReader<String> dummyReader() {
         return new PravegaReader<String>("test-scope", "test-stream", "test-uri", new JavaSerializer<String>(),
                 "test-rg-name", "test-reader-id");
-    }
-}
-
-@RequiredArgsConstructor
-class FakeEventRead<T> implements EventRead<T> {
-
-    private final T event;
-
-    @Override
-    public T getEvent() {
-        return this.event;
-    }
-
-    @Override
-    public Position getPosition() {
-        return null;
-    }
-
-    @Override
-    public EventPointer getEventPointer() {
-        return null;
-    }
-
-    @Override
-    public boolean isCheckpoint() {
-        return false;
-    }
-
-    @Override
-    public java.lang.String getCheckpointName() {
-        return null;
     }
 }

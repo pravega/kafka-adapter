@@ -15,12 +15,12 @@ import io.pravega.client.stream.Position;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FakeEvent implements EventRead<String> {
+public class FakeEvent<T> implements EventRead<T> {
 
-    private final String messageToReturn;
+    private final T messageToReturn;
 
     @Override
-    public String getEvent() {
+    public T getEvent() {
         return messageToReturn;
     }
 

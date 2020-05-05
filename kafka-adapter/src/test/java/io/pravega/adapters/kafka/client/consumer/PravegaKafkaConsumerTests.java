@@ -469,7 +469,7 @@ public class PravegaKafkaConsumerTests {
         readerByStream.put("test-topic", reader);
         consumer.setReadersByStream(readerByStream);
 
-        when(reader.readNextEvent(anyLong())).thenReturn(new FakeEvent("event message"));
+        when(reader.readNextEvent(anyLong())).thenReturn(new FakeEvent<String>("event message"));
 
         ConsumerRecords<String, String> records = consumer.read(100, 5);
         assertNotNull(records);

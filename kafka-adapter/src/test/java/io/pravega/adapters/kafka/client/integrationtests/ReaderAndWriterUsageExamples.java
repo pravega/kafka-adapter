@@ -50,9 +50,9 @@ public class ReaderAndWriterUsageExamples {
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            assertEquals("Message - 1", reader.readNext(200));
-            assertEquals("Message - 2", reader.readNext(200));
-            assertEquals("Message - 3", reader.readNext(200));
+            assertEquals("Message - 1", reader.readNextEvent(200).getEvent());
+            assertEquals("Message - 2", reader.readNextEvent(200).getEvent());
+            assertEquals("Message - 3", reader.readNextEvent(200).getEvent());
         }
     }
 
@@ -81,14 +81,14 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                     readerGroupName, readerId1)) {
             for (int i = 0; i < 4; i++) {
-                log.info("Reader read message: {}", reader.readNext(200));
+                log.info("Reader read message: {}", reader.readNextEvent(200).getEvent());
             }
         }
 
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 readerGroupName, readerId2)) {
             for (int i = 0; i < 4; i++) {
-                log.info("A new reader read message: {}", reader.readNext(200));
+                log.info("A new reader read message: {}", reader.readNextEvent(200).getEvent());
             }
         }
     }
@@ -147,9 +147,9 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader<String> reader = new PravegaReader(scope, Arrays.asList(stream1, stream2), controllerUri,
                 new JavaSerializer<String>(),
                 UUID.randomUUID().toString(), "readerId")) {
-            String readEvent1 = reader.readNext(200);
+            String readEvent1 = reader.readNextEvent(200).getEvent();
             log.info("Read event 1: [{}]", readEvent1);
-            String readEvent2 = reader.readNext(200);
+            String readEvent2 = reader.readNextEvent(200).getEvent();
             log.info("Read event 2: [{}]", readEvent2);
             assertEquals(writeEvent1, readEvent1);
             assertEquals(writeEvent2, readEvent2);
@@ -176,7 +176,7 @@ public class ReaderAndWriterUsageExamples {
             reader.seekToEnd();
 
             writer.writeEvent("Message after seekToEnd").join();
-            String readMessage = reader.readNext(2000);
+            String readMessage = reader.readNextEvent(2000).getEvent();
             assertEquals("Message after seekToEnd", readMessage);
         } finally {
             if (writer != null) {
@@ -205,13 +205,13 @@ public class ReaderAndWriterUsageExamples {
         try (PravegaReader reader = new PravegaReader(scope, topic, controllerUri, new JavaSerializer<String>(),
                 readerGroupName, readerId)) {
             for (int i = 0; i < 2; i++) {
-                log.info("Reader read message: {}", reader.readNext(200));
+                log.info("Reader read message: {}", reader.readNextEvent(200).getEvent());
             }
             reader.seekToEnd();
             writer.writeEvent("Message after seekToEnd").join();
 
             for (int i = 0; i < 20; i++) {
-                log.info("Reader read message: {}", reader.readNext(200));
+                log.info("Reader read message: {}", reader.readNextEvent(200).getEvent());
             }
         }
         writer.close();

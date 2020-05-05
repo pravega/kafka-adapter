@@ -106,7 +106,7 @@ public class CustomSerializationUsageExamples {
 
         try (PravegaReader<Person> reader = new PravegaReader<>(SCOPE_NAME, topic, "tcp://localhost:9090",
                 new PersonSerializer(), UUID.randomUUID().toString(), "readerId")) {
-            Person readPerson = reader.readNext(200);
+            Person readPerson = reader.readNextEvent(200).getEvent();
             log.info("Read Person: {}", readPerson);
             assertEquals("jdoe", PERSON_OBJ.getUserName());
         }
