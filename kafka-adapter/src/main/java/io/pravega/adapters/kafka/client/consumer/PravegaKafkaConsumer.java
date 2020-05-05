@@ -367,7 +367,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     do {
                         try {
                             event = reader.readNextEvent(readTimeout);
-                            if (event.getEvent() != null) {
+                            if (event != null && event.getEvent() != null) {
                                 log.trace("Found a non-null event");
                                 recordsToAdd.add(translateToConsumerRecord(stream, event));
                                 countOfReadEvents++;
@@ -376,7 +376,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                         } catch (ReinitializationRequiredException e) {
                             throw e;
                         }
-                    } while (event.getEvent() != null
+                    } while (event != null && event.getEvent() != null
                             && countOfReadEvents <= numRecordsPerReaderInEachIteration
                             && totalCountOfRecords.get() <= this.maxPollRecords
                             && stopWatch.getTime() < finalTimeout);
@@ -391,8 +391,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
                     } else {
                         log.debug("No records to add");
                     }
-                } else {
-                    log.trace("Read time already expired for stream: {}", i.getKey());
                 }
             });
         }
