@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  */
 @Slf4j
-public class SampleFlinkSourceExample {
+public class FlinkSourceShowcase {
 
     public static void main(String[] args) throws Exception {
         log.info("Starting the app");

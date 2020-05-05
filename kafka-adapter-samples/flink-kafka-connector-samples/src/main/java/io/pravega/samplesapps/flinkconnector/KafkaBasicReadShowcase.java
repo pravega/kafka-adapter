@@ -21,10 +21,10 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 @Slf4j
-public class KafkaBasicReadExample extends BasicReadExample {
+public class KafkaBasicReadShowcase extends BasicReadShowcase {
 
-    public KafkaBasicReadExample(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
-                                 String topic) {
+    public KafkaBasicReadShowcase(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
+                                  String topic) {
         super(isCreateTestData, bootstrapServer, clientId, topic, new SimpleStringSchema());
     }
 
@@ -55,7 +55,7 @@ public class KafkaBasicReadExample extends BasicReadExample {
         String bootstrapServers = System.getProperty("bootstrapservers", "localhost:9092");
         log.info("Evaluated bootstrap server=[{}]", bootstrapServers);
 
-        KafkaBasicReadExample driver = new KafkaBasicReadExample(false, bootstrapServers,
+        KafkaBasicReadShowcase driver = new KafkaBasicReadShowcase(false, bootstrapServers,
                 "test-client", "kafka-topic");
         driver.execute();
     }

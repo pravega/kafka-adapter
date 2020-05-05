@@ -6,17 +6,18 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  */
-package io.pravega.kafka.sampleapps.serialization;
+package io.pravega.kafka.sampleapps;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import io.pravega.kafka.shared.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -28,26 +29,29 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
+/**
+ * Produces/sends a couple of messages to the broker and consumes them back.
+ */
 @Slf4j
-public class AppWithCustomSerde {
-    private final static Properties APP_CONFIG = Utils.loadConfigFromClasspath("customserialization.properties");
+public class MultiMessagesApplicationShowcase {
+    private static final Properties APP_CONFIG = loadConfig();
 
-    public static void main(String... args) {
+    @SuppressWarnings("checkstyle:Regexp")
+    public static void main(String... args) throws IOException {
         String topic = APP_CONFIG.getProperty("topic.name");
+        String message1 = "My important message 1";
+        String message2 = "My important message 2";
 
-        Person person = new Person("Ravi", "Sharda", "rsharda");
+        produce(topic, message1);
+        produce(topic, message2);
 
-        Utils.waitForEnterToContinue("Press enter to proceed with sending a message to the server(s)");
-        produce(topic, person);
-
-        // waitForEnterToContinue("Press enter to proceed with receiving a message from the server(s)");
-        // consume(topic, message);
+        consume(topic, Arrays.asList(message1, message2));
 
         log.info("Done. Exiting...");
         System.exit(0);
     }
 
-    private static void produce(String topic, Person person) {
+    private static void produce(String topic, String message) {
         // Prepare producer configuration
         Properties producerConfig = new Properties();
         producerConfig.put("bootstrap.servers", APP_CONFIG.getProperty("bootstrap.servers"));
@@ -55,10 +59,10 @@ public class AppWithCustomSerde {
         producerConfig.put("value.serializer", APP_CONFIG.getProperty("value.serializer"));
 
         // Initialize a Kafka producer
-        Producer<String, Person> kafkaProducer = new KafkaProducer<>(producerConfig);
+        Producer<String, String> kafkaProducer = new KafkaProducer<>(producerConfig);
 
         // Setup a record that we want to send
-        ProducerRecord<String, Person> producerRecord = new ProducerRecord<>(topic, person);
+        ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, message);
 
         // Asynchronously send a producer record via the producer
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
@@ -75,7 +79,7 @@ public class AppWithCustomSerde {
         }
     }
 
-    private static void consume(String topic, String expectedMessage) {
+    private static void consume(String topic, List<String> expectedMessages) {
 
         // Prepare the consumer configuration
         Properties consumerConfig = new Properties();
@@ -98,13 +102,28 @@ public class AppWithCustomSerde {
             log.debug("Done receiving the records");
 
             // Assert
-            assert records.count() == 1;
+            assert records.count() == 2;
             for (ConsumerRecord<String, String> record : records) {
                 log.info("Consumed a record containing value: [{}]", record.value());
-                assert record.value().equals(expectedMessage);
             }
         } finally {
             kafkaConsumer.close();
         }
+    }
+
+    private static Properties loadConfig() {
+        Properties props = new Properties();
+        try (InputStream input = BasicApplicationShowcase.class.getClassLoader()
+                .getResourceAsStream("app.properties")) {
+
+            if (input == null) {
+                log.error("Unable to find app.properties in classpath");
+            }
+            props.load(input);
+        } catch (IOException e) {
+            log.error("Unable to load app.properties from classpath");
+            throw new RuntimeException(e);
+        }
+        return props;
     }
 }

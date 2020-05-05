@@ -9,15 +9,13 @@
  */
 package io.pravega.kafka.sampleapps;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import io.pravega.kafka.shared.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -29,23 +27,16 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
-/**
- * Produces/sends a couple of messages to the broker and consumes them back.
- */
 @Slf4j
-public class ProducerAndConsumerAppWithMultipleMessages {
-    private static final Properties APP_CONFIG = loadConfig();
+public class BasicApplicationShowcase {
+    private static final Properties APP_CONFIG = Utils.loadConfigFromClasspath("app.properties");
 
-    @SuppressWarnings("checkstyle:Regexp")
-    public static void main(String... args) throws IOException {
+    public static void main(String... args) {
         String topic = APP_CONFIG.getProperty("topic.name");
-        String message1 = "My important message 1";
-        String message2 = "My important message 2";
+        String message = "My important message 1";
 
-        produce(topic, message1);
-        produce(topic, message2);
-
-        consume(topic, Arrays.asList(message1, message2));
+        produce(topic, message);
+        consume(topic, message);
 
         log.info("Done. Exiting...");
         System.exit(0);
@@ -79,7 +70,7 @@ public class ProducerAndConsumerAppWithMultipleMessages {
         }
     }
 
-    private static void consume(String topic, List<String> expectedMessages) {
+    private static void consume(String topic, String expectedMessage) {
 
         // Prepare the consumer configuration
         Properties consumerConfig = new Properties();
@@ -102,28 +93,13 @@ public class ProducerAndConsumerAppWithMultipleMessages {
             log.debug("Done receiving the records");
 
             // Assert
-            assert records.count() == 2;
+            assert records.count() == 1;
             for (ConsumerRecord<String, String> record : records) {
                 log.info("Consumed a record containing value: [{}]", record.value());
+                assert record.value().equals(expectedMessage);
             }
         } finally {
             kafkaConsumer.close();
         }
-    }
-
-    private static Properties loadConfig() {
-        Properties props = new Properties();
-        try (InputStream input = ProducerAndConsumerAppWithMinimalKafkaConfig.class.getClassLoader()
-                .getResourceAsStream("app.properties")) {
-
-            if (input == null) {
-                log.error("Unable to find app.properties in classpath");
-            }
-            props.load(input);
-        } catch (IOException e) {
-            log.error("Unable to load app.properties from classpath");
-            throw new RuntimeException(e);
-        }
-        return props;
     }
 }

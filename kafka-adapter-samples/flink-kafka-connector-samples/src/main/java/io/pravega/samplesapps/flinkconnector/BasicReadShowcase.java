@@ -26,7 +26,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class BasicReadExample {
+public abstract class BasicReadShowcase {
     final static String SERIALIZER = "org.apache.kafka.common.serialization.StringSerializer";
 
     @Getter

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
-import io.pravega.kafka.sampleapps.ProducerAndConsumerAppWithMinimalKafkaConfig;
+import io.pravega.kafka.sampleapps.BasicApplicationShowcase;
 
 @Slf4j
 public class Utils {
@@ -30,7 +30,7 @@ public class Utils {
 
     public static Properties loadConfigFromClasspath(String propertiesFileName) {
         Properties props = new Properties();
-        try (InputStream input = ProducerAndConsumerAppWithMinimalKafkaConfig.class.getClassLoader()
+        try (InputStream input = BasicApplicationShowcase.class.getClassLoader()
                 .getResourceAsStream(propertiesFileName)) {
             if (input == null) {
                 log.error("Unable to find {} in classpath", propertiesFileName);

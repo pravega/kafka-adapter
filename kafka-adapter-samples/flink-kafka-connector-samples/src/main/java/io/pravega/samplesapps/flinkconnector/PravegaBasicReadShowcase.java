@@ -19,12 +19,12 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PravegaBasicReadExample extends BasicReadExample {
+public class PravegaBasicReadShowcase extends BasicReadShowcase {
 
     private final static String DEFAULT_SCOPE = "migrated-from-kafka";
 
-    public PravegaBasicReadExample(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
-                                   @NonNull String topic) {
+    public PravegaBasicReadShowcase(boolean isCreateTestData, @NonNull String bootstrapServer, @NonNull String clientId,
+                                    @NonNull String topic) {
         super(isCreateTestData, bootstrapServer, clientId, topic, new StringDeserializationSchema());
     }
 
@@ -56,7 +56,7 @@ public class PravegaBasicReadExample extends BasicReadExample {
     }
 
     public static void main(String[] args) {
-        PravegaBasicReadExample driver = new PravegaBasicReadExample(false, "tcp://localhost:9090",
+        PravegaBasicReadShowcase driver = new PravegaBasicReadShowcase(false, "tcp://localhost:9090",
                 "testClient", "test-topic");
         driver.execute();
     }

@@ -6,8 +6,9 @@
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  */
-package io.pravega.kafka.sampleapps;
+package io.pravega.kafka.sampleapps.serialization;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -28,21 +29,25 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 @Slf4j
-public class ProducerAndConsumerAppWithMinimalKafkaConfig {
-    private static final Properties APP_CONFIG = Utils.loadConfigFromClasspath("app.properties");
+public class CustomSerdeShowcase {
+    private final static Properties APP_CONFIG = Utils.loadConfigFromClasspath("customserialization.properties");
 
     public static void main(String... args) {
         String topic = APP_CONFIG.getProperty("topic.name");
-        String message = "My important message 1";
 
-        produce(topic, message);
-        consume(topic, message);
+        Person person = new Person("Ravi", "Sharda", "rsharda");
+
+        Utils.waitForEnterToContinue("Press enter to proceed with sending a message to the server(s)");
+        produce(topic, person);
+
+        // waitForEnterToContinue("Press enter to proceed with receiving a message from the server(s)");
+        // consume(topic, message);
 
         log.info("Done. Exiting...");
         System.exit(0);
     }
 
-    private static void produce(String topic, String message) {
+    private static void produce(String topic, Person person) {
         // Prepare producer configuration
         Properties producerConfig = new Properties();
         producerConfig.put("bootstrap.servers", APP_CONFIG.getProperty("bootstrap.servers"));
@@ -50,10 +55,10 @@ public class ProducerAndConsumerAppWithMinimalKafkaConfig {
         producerConfig.put("value.serializer", APP_CONFIG.getProperty("value.serializer"));
 
         // Initialize a Kafka producer
-        Producer<String, String> kafkaProducer = new KafkaProducer<>(producerConfig);
+        Producer<String, Person> kafkaProducer = new KafkaProducer<>(producerConfig);
 
         // Setup a record that we want to send
-        ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, message);
+        ProducerRecord<String, Person> producerRecord = new ProducerRecord<>(topic, person);
 
         // Asynchronously send a producer record via the producer
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
