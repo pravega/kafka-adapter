@@ -95,6 +95,6 @@ $ ./gradlew :kafka-adapter:spotbugsTest
 # Running all checks
 $ ./gradlew check
 
-# Generating unit test coverage report. Output can be found in build/jococoHtml
+# Generating unit test coverage report. Output can be found in /path/to/kafka-adapter/kafka-adapter/build/jococoHtml
 $ ./gradlew :kafka-adapter:jacocoTestReport
 ```
