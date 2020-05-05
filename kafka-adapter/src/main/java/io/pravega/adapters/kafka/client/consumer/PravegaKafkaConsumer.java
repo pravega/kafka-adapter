@@ -62,10 +62,13 @@ import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.Deserializer;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import static org.apache.kafka.clients.consumer.ConsumerRecord.NO_TIMESTAMP;
 import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_CHECKSUM;
 import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
 
+@NotThreadSafe
 @Slf4j
 public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
@@ -91,20 +94,20 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     private final int maxPollRecords;
 
-    @VisibleForTesting
-    @Getter(AccessLevel.PACKAGE)
-    @Setter(AccessLevel.PACKAGE)
-    private Map<String, Reader<V>> readersByStream = new HashMap<>();
-
-    private Set<TopicPartition> topicPartitionsAssigned;
-
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     private final AtomicBoolean isWoken = new AtomicBoolean(false);
 
     private final Serializer deserializer;
 
-    private final ExecutorService closeExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService asyncTasksExecutor = Executors.newCachedThreadPool();
+
+    @VisibleForTesting
+    @Getter(AccessLevel.PACKAGE)
+    @Setter(AccessLevel.PACKAGE)
+    private Map<String, Reader<V>> readersByStream = new HashMap<>();
+
+    private Set<TopicPartition> topicPartitionsAssigned;
 
     public PravegaKafkaConsumer(final Properties kafkaConfigProperties) {
         this(kafkaConfigProperties, null, null);
@@ -251,9 +254,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      * @param partitions topic partitions that specify which partitions of which topics are assigned to this consumer.
      */
     @Override
-    public void assign(Collection<TopicPartition> partitions) {
+    public void assign(@NonNull Collection<TopicPartition> partitions) {
         log.trace("assign(partitions) called with partitions: {}", partitions);
 
+        if (partitions.size() < 1) {
+            throw new IllegalArgumentException("Empty partitions specified");
+        }
         final Collection<String> topics = new ArrayList<>();
         partitions.stream().forEach(tp -> topics.add(tp.topic()));
 
@@ -478,28 +484,33 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     @Override
-    public void seekToEnd(Collection<TopicPartition> partitions) {
+    public void seekToEnd(@NonNull Collection<TopicPartition> partitions) {
         log.debug("seekToEnd(partitions) invoked");
-        if (partitions == null) {
-            throw new IllegalArgumentException("partitions are null");
+        if (partitions.size() < 1) {
+            throw new IllegalArgumentException("Empty partitions specified");
         }
         if (this.readersByStream.size() < 1) {
             throw new IllegalStateException("This consumer instance is not subscribed to any topics");
         }
-        partitions.forEach(topicPartition -> {
-            if (this.readersByStream.get(topicPartition.topic()) == null) {
-                throw new IllegalStateException("This consumer instance is not subscribed to/assigned some of the "
-                        + "specified topics");
-            }
-        });
 
-        Set<String> topicsAlreadyHandled = new HashSet<>();
+        // Check that each of the specified partitions is subscribed to already
+        areSubscribed(partitions);
+        seekToEndForEachReader(partitions);
+    }
+
+    private void seekToEndForEachReader(@NonNull Collection<TopicPartition> partitions) {
+        // Multiple items of the specified collection may be for the same topic (stream in Pravega speak). Since we
+        // maintain a map of readers by stream, we only need to call the reader's seekToEnd() once. This variable is
+        // used to track the topics for which the reader's seekToEnd() is already invoked.
+        final Set<String> processedTopics = new HashSet<>();
+
         for (TopicPartition topicPartition : partitions) {
-            Reader reader = this.readersByStream.get(topicPartition.topic());
-            if (reader != null) {
-                if (!topicsAlreadyHandled.contains(topicPartition.topic())) {
+            String stream = topicPartition.topic();
+            if (this.readersByStream.containsKey(stream)) {
+                Reader reader = this.readersByStream.get(stream);
+                if (!processedTopics.contains(stream)) {
                     reader.seekToEnd();
-                    topicsAlreadyHandled.add(topicPartition.topic());
+                    processedTopics.add(topicPartition.topic());
                 }
             } else {
                 throw new IllegalStateException("This consumer instance is not subscribed to/assigned some of the "
@@ -508,10 +519,18 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         }
     }
 
+    private void areSubscribed(@NonNull Collection<TopicPartition> partitions) {
+        partitions.forEach(topicPartition -> {
+            if (this.readersByStream.get(topicPartition.topic()) == null) {
+                throw new IllegalStateException("This consumer instance is not subscribed to/assigned some of the "
+                        + "specified topics");
+            }
+        });
+    }
+
     @Override
     public long position(TopicPartition partition) {
-        log.trace("position(partition) invoked");
-        return -1;
+        return position(partition, Duration.ofSeconds(Integer.MAX_VALUE));
     }
 
     @Override
@@ -583,7 +602,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @SneakyThrows
     @Override
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
-        return SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
+        return SimpleTimeLimiter.create(asyncTasksExecutor).callWithTimeout(
                 () -> listTopics(),
                 timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
@@ -647,7 +666,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @SneakyThrows
     @Override
     public void close(long timeout, TimeUnit unit) {
-        SimpleTimeLimiter.create(closeExecutor).runWithTimeout(() -> cleanup(), timeout, unit);
+        SimpleTimeLimiter.create(asyncTasksExecutor).runWithTimeout(() -> cleanup(), timeout, unit);
     }
 
     @Override
