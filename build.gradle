@@ -147,8 +147,6 @@ project (':kafka-adapter') {
 					// mavenCentral()
 				}
 			}
-
-
 		}
 	}
 
@@ -170,6 +168,24 @@ project (':kafka-adapter') {
 			html.destination file("${buildDir}/jacocoHtml")
 		}
 	}
+
+	// Enforces target code coverage by failing builds.
+	jacocoTestCoverageVerification {
+		// Run this task only if the test task is also run. So, `./gradlew build -x test` will skip this task a well,
+		// while it'll be run if `gradlew build` or `./gradlew check` is run.
+		onlyIf {
+			test.state.executed
+		}
+		violationRules {
+			rule {
+				limit {
+					// 75% code coverage is required.
+					minimum = 0.75
+				}
+			}
+		}
+	}
+
 
 	/**
 	 * Create a fat jar with all dependencies including Kafka client in it. Here we are specifying to the shadowJar task
@@ -207,6 +223,7 @@ project (':kafka-adapter') {
 	}
 
 	tasks.build.dependsOn tasks.shadowJar
+	tasks.check.dependsOn jacocoTestCoverageVerification
 
 	// We don't want the un-shadowed jar kafka-adapter-<version>.jar (without the classifer `all`) containing only the
 	// classes of this project. If we modify the following to true, we'd see
