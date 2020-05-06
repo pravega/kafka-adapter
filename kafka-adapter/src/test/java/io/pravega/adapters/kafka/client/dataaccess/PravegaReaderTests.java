@@ -100,6 +100,13 @@ public class PravegaReaderTests {
         assertEquals(2, readEvents.size());
     }
 
+    @Test
+    public void closeIsIdempotent() {
+        PravegaReader<String> reader = dummyReader();
+        reader.close();
+        reader.close();
+    }
+
     private PravegaReader<String> dummyReader() {
         return new PravegaReader<String>("test-scope", "test-stream", "test-uri", new JavaSerializer<String>(),
                 "test-rg-name", "test-reader-id");

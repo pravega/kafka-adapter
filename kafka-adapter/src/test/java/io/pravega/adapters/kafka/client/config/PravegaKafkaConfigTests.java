@@ -185,6 +185,24 @@ public class PravegaKafkaConfigTests {
         assertNotEquals(Person.class, serializer.getClass());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void evaluateSerdeFailsWhenClassIsNonExistent() {
+        Properties props = new Properties();
+        props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "dummy_uri");
+        props.setProperty("serializer", "random.package.RandomSerializer");
+
+        PravegaKafkaConfig config = new FakeKafkaConfig(props);
+        Serializer<Person> serializer = config.evaluateSerde("serializer");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void evaluateSerdeFailsWhenInputHasUnexpectedObjectInProps() {
+        Properties props = new Properties();
+        props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "dummy_uri");
+        props.put("serializer", new Integer(20));
+        new FakeKafkaConfig(props).evaluateSerde("serializer");
+    }
+
     @Test
     public void instantiateSerdeFromCustomClassSucceeds() {
         Properties props = new Properties();

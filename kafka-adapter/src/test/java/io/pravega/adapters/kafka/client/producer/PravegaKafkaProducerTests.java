@@ -25,6 +25,10 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.errors.AuthorizationException;
+import org.apache.kafka.common.errors.OutOfOrderSequenceException;
+import org.apache.kafka.common.errors.ProducerFencedException;
 import org.junit.Test;
 
 import static io.pravega.adapters.kafka.client.testutils.TestUtils.assertThrows;
@@ -42,7 +46,7 @@ import static org.mockito.Mockito.when;
 public class PravegaKafkaProducerTests {
 
     @Test(expected = IllegalArgumentException.class)
-    public void instantiationFailsIfBootstrapServersIsImpty() {
+    public void instantiationFailsIfBootstrapServersIsEmpty() {
         Properties props = new Properties();
         new PravegaKafkaProducer<>(props);
     }
@@ -81,6 +85,27 @@ public class PravegaKafkaProducerTests {
         assertThrows("Didn't encounter illegal state exception when aborting a transaction.",
                 () -> producer.abortTransaction(),
                 e -> e instanceof IllegalStateException);
+    }
+
+    @Test
+    public void transactionalWrite() {
+        Producer<String, String> producer = new PravegaKafkaProducer<>(prepareDummyMinimalConfig());
+        producer.initTransactions();
+        try {
+            producer.beginTransaction();
+
+            // produce data at this point
+
+            producer.commitTransaction();
+        } catch (ProducerFencedException | OutOfOrderSequenceException | AuthorizationException e) {
+            // We can't recover from these, so we'll close the producer and exit.
+            producer.close();
+        } catch (KafkaException e) {
+            producer.abortTransaction();
+        }
+        producer.close();
+
+        // No exceptions equates a successful test run here.
     }
 
     @Test
