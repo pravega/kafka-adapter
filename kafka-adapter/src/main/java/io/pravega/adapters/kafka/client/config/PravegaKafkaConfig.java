@@ -13,7 +13,6 @@ import io.pravega.client.stream.Serializer;
 import io.pravega.client.stream.impl.ByteArraySerializer;
 import io.pravega.client.stream.impl.ByteBufferSerializer;
 import io.pravega.client.stream.impl.JavaSerializer;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,6 @@ public abstract class PravegaKafkaConfig {
     @Getter
     protected final PravegaConfig pravegaConfig;
 
-    @Getter(AccessLevel.PROTECTED)
     private final Properties properties;
 
     public PravegaKafkaConfig(Properties props) {
@@ -107,8 +105,9 @@ public abstract class PravegaKafkaConfig {
         } else {
             try {
                 return (Serializer) Class.forName(fqClassName).newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                log.error("Unable to instantiate serializer with name [{}]", fqClassName, e);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new IllegalStateException(e);
             }
         }

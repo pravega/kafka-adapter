@@ -25,10 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.concurrent.ThreadSafe;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -46,6 +48,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.ProducerFencedException;
 
+@ThreadSafe
 @Slf4j
 public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
@@ -64,7 +67,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     private final int numSegments;
 
     public PravegaKafkaProducer(Properties configProperties) {
-        this(configProperties, new HashMap<>());
+        this(configProperties, new ConcurrentHashMap<>());
     }
 
     @VisibleForTesting
@@ -76,7 +79,6 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
         serializer = config.getSerializer();
         numSegments = config.getNumSegments();
         interceptors = config.getInterceptors();
-
         writersByStream = writers;
     }
 
@@ -132,15 +134,13 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
             throw new IllegalArgumentException("Specified record is not valid");
         }
         String stream = record.topic();
-        Writer<V> writer;
+        final Writer<V> writer;
         if (this.writersByStream.containsKey(stream)) {
             writer = this.writersByStream.get(stream);
-
         } else {
             writer = new PravegaWriter(scope, stream, controllerUri, serializer, numSegments);
             this.writersByStream.putIfAbsent(stream, writer);
         }
-
         final V message = translateToPravegaMessage(record);
         CompletableFuture<RecordMetadata> cf = writer.writeEvent(message)
                 .handle((v, ex) -> {

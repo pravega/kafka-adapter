@@ -100,11 +100,6 @@ public class PravegaReader<T> implements Reader<T> {
     }
 
     @Override
-    public List<String> getStreams() {
-        return this.readerManager.getStreamNames();
-    }
-
-    @Override
     public void close() {
         this.readerManager.close();
     }

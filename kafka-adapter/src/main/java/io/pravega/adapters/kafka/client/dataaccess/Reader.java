@@ -19,6 +19,4 @@ public interface Reader<T> extends AutoCloseable {
     EventRead<T> readNextEvent(long timeoutInMillis);
 
     void seekToEnd();
-
-    List<String> getStreams();
 }
