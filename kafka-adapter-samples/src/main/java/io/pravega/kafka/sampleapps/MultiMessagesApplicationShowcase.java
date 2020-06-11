@@ -113,7 +113,7 @@ public class MultiMessagesApplicationShowcase {
 
     private static Properties loadConfig() {
         Properties props = new Properties();
-        try (InputStream input = BasicApplicationShowcase.class.getClassLoader()
+        try (InputStream input = BasicKafkaApplicationShowcase.class.getClassLoader()
                 .getResourceAsStream("app.properties")) {
 
             if (input == null) {
