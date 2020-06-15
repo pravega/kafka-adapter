@@ -19,7 +19,8 @@ import org.junit.runners.Suite;
         AdapterUsageAdvancedExamples.class,
         TransactionExamples.class,
         CustomSerializationUsageExamples.class,
-        ReaderAndWriterUsageExamples.class
+        ReaderAndWriterUsageExamples.class,
+        PrimitiveSerializationExamples.class
 })
 
 public class IntegrationTestSuite {

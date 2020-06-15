@@ -75,7 +75,7 @@ public class PravegaReader<T> implements AutoCloseable {
                 .build();
 
         ReaderGroupConfig.ReaderGroupConfigBuilder rgBuilder =
-                ReaderGroupConfig.builder().disableAutomaticCheckpoints();
+                ReaderGroupConfig.builder();
         for (String stream : this.streams) {
             rgBuilder.stream(Stream.of(scope, stream));
         }
@@ -97,39 +97,25 @@ public class PravegaReader<T> implements AutoCloseable {
         EventRead<T> event = null;
         do {
             event = reader.readNextEvent(timeoutInMillis);
+
+            // getEvent() can return null, not only if the event is actually null, but also if it is a checkpoint signal
             if (event.getEvent() != null) {
                 result.add(event.getEvent());
             }
-        } while (event.getEvent() != null);
+        } while (!isLastEvent(event));
         return result;
     }
 
-    public EventRead<T> readNextEvent(long timeoutInMillis) {
-        if (!isInitialized()) {
-            init();
-        }
-        return this.reader.readNextEvent(timeoutInMillis);
-    }
-
-    public T tryReadNext(long timeinMillis) {
-        if (!isInitialized()) {
-            init();
-        }
-        EventRead<T> event = this.reader.readNextEvent(timeinMillis);
-        if (event != null) {
-            return event.getEvent();
-
+    private boolean isLastEvent(EventRead event) {
+        if (event.isCheckpoint()) {
+            return false;
         } else {
-            return null;
+            if (event.getEvent() == null) {
+                return true;
+            } else {
+                return false;
+            }
         }
-    }
-
-    public T readNext(long timeinMillis) {
-        T result = tryReadNext(timeinMillis);
-        if (result == null) {
-            throw new IllegalStateException("No Event");
-        }
-        return result;
     }
 
     @Override
