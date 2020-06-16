@@ -14,11 +14,12 @@
 
     <logger name="org.apache.zookeeper" level="error"/>
     <logger name="org.apache.kafka" level="error"/>
-    <logger name="org.apache.kafka.clients.producer.KafkaProducer" level="info"/>
-    <logger name="org.apache.kafka.clients.consumer.KafkaConsumer" level="info"/>
+    <logger name="org.apache.kafka.clients.producer.KafkaProducer" level="debug"/>
+    <logger name="org.apache.kafka.clients.consumer.KafkaConsumer" level="debug"/>
     <logger name="org.apache.curator" level="error"/>
     <logger name="io.grpc.netty" level="error"/>
-    <logger name="io.pravega.adapters" level="info"/>
+    <logger name="io.pravega.kafka.sampleapps" level="debug"/>
+    <logger name="io.pravega.adapters" level="debug"/>
     <logger name="io.pravega.client" level="error"/>
     <logger name="io.pravega.server" level="error"/>
     <logger name="io.pravega.shared" level="error"/>
