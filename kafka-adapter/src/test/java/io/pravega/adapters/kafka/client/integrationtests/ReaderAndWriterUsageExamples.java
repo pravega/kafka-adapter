@@ -104,11 +104,9 @@ public class ReaderAndWriterUsageExamples {
         final String writeEvent2 = "This is event 2 in stream 1";
 
         // Arrange
-
         ClientConfig clientConfig = ClientConfig.builder()
                 .controllerURI(URI.create(controllerUri))
                 .build();
-
         @Cleanup
         StreamManager streamManager = StreamManager.create(clientConfig);
         log.info("Created a stream manager");

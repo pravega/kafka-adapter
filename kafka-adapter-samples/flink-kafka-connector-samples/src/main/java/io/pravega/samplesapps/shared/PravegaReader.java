@@ -107,13 +107,13 @@ public class PravegaReader<T> implements AutoCloseable {
     }
 
     private boolean isLastEvent(EventRead event) {
-        if (event.isCheckpoint()) {
-            return false;
+        if (event == null) {
+            return true;
         } else {
-            if (event.getEvent() == null) {
-                return true;
-            } else {
+            if (event.isCheckpoint()) {
                 return false;
+            } else {
+                return event.getEvent() == null;
             }
         }
     }

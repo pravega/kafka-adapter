@@ -73,7 +73,6 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     @VisibleForTesting
     PravegaKafkaProducer(@NonNull final Properties configProperties, Map<String, Writer<V>> writers) {
         PravegaProducerConfig config = new PravegaProducerConfig(configProperties);
-
         controllerUri = config.evaluateServerEndpoints();
         scope = config.getScope() != null ? config.getScope() : PravegaConfig.DEFAULT_SCOPE;
         serializer = config.getSerializer();
@@ -84,46 +83,44 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void initTransactions() {
+        log.trace("initTransactions()");
         ensureNotClosed();
-        log.debug("Initializing transactions");
-        // TODO: implementation
     }
 
     @Override
     public void beginTransaction() throws ProducerFencedException {
+        log.trace("beginTransaction()");
         ensureNotClosed();
-        log.debug("Beginning transaction");
-        // TODO: implementation
     }
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId)
             throws ProducerFencedException {
+        log.trace("sendOffsetsToTransaction(...)");
         throw new UnsupportedOperationException("Sending offsets to transaction is not supported");
     }
 
     @Override
     public void commitTransaction() throws ProducerFencedException {
+        log.trace("commitTransaction()");
         ensureNotClosed();
-        log.debug("Committing transaction");
-        // TODO: implementation
     }
 
     @Override
     public void abortTransaction() throws ProducerFencedException {
+        log.trace("abortTransaction()");
         ensureNotClosed();
-        log.debug("Aborting transaction");
-        // TODO: implementation
     }
 
     @Override
     public Future<RecordMetadata> send(ProducerRecord<K, V> record) {
+        log.trace("send(record)");
         return send(record, null);
     }
 
     @Override
     public Future<RecordMetadata> send(@NonNull ProducerRecord<K, V> record, Callback callback) {
-        log.trace("Arguments: record={}, callback={}", record, callback);
+        log.trace("send(record, callback)");
         ProducerRecord<K, V> interceptedRecord = this.interceptors.onSend(record);
         ensureNotClosed();
         return doSend(interceptedRecord, callback);
@@ -181,26 +178,27 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void flush() {
+        log.trace("flush()");
         ensureNotClosed();
-        log.trace("Flushing");
+
         this.writersByStream.values().stream().forEach(i -> i.flush());
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        log.trace("Returning empty partitions for topic: {}", topic);
+        log.trace("partitionsFor(topic)");
         return new ArrayList<>();
     }
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        log.trace("Returning empty metrics map");
+        log.trace("metrics()");
         return new HashMap<>();
     }
 
     @Override
     public void close() {
-        log.trace("Closing the producer");
+        log.trace("close()");
         cleanup();
     }
 
@@ -224,6 +222,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
                 v.close();
             } catch (Exception e) {
                 log.warn("Exception in closing the writer", e);
+                // ignore
             }
         });
     }

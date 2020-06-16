@@ -70,14 +70,30 @@ public class PravegaReader<T> implements Reader<T> {
             if (event != null && event.getEvent() != null) {
                 result.add(event.getEvent());
             }
-        } while (event != null && event.getEvent() != null);
+        } while (!isLastEvent(event));
         return result;
+    }
+
+    private boolean isLastEvent(EventRead event) {
+        if (event == null) {
+            return true;
+        } else {
+            if (event.isCheckpoint()) {
+                return false;
+            } else {
+                return event.getEvent() == null;
+            }
+        }
     }
 
     @Override
     public EventRead<T> readNextEvent(long timeoutInMillis) {
         initIfNotInitialized();
-        return this.reader.readNextEvent(timeoutInMillis);
+        EventRead<T> result = this.reader.readNextEvent(timeoutInMillis);
+        if (result.isCheckpoint()) {
+            result = this.reader.readNextEvent(timeoutInMillis);
+        }
+        return result;
     }
 
     @Override

@@ -73,8 +73,7 @@ class ReaderManager<T> {
         if (isInitialized()) {
             return;
         }
-        ReaderGroupConfig.ReaderGroupConfigBuilder rgBuilder =
-                ReaderGroupConfig.builder().disableAutomaticCheckpoints();
+        ReaderGroupConfig.ReaderGroupConfigBuilder rgBuilder = ReaderGroupConfig.builder();
 
         for (String stream : this.streamNames) {
             rgBuilder.stream(Stream.of(scope, stream));

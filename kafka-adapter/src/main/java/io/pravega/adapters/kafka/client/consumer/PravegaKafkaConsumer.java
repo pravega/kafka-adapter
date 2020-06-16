@@ -115,7 +115,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     public PravegaKafkaConsumer(final Properties configProperties,
                                 Deserializer<K> keyDeserializer, Deserializer<V> valueDeserializer) {
-
         if (keyDeserializer != null) {
             configProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                     keyDeserializer.getClass().getCanonicalName());
@@ -138,12 +137,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         maxPollRecords = config.getMaxPollRecords();
     }
 
-
     /**
+     * Returns assigned topic partitions.
+     *
      * In Pravega manual assignment of segments is not applicable, as segments (or partitions) are not fixed and
      * can scale dynamically.
-     *
-     * @throws UnsupportedOperationException If invoked
      */
     @Override
     public Set<TopicPartition> assignment() {
@@ -152,11 +150,11 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         // this.readersByStream.keySet().stream().forEach(topic -> result.add(new TopicPartition(topic, 0)));
         if (topicPartitionsAssigned != null) {
             log.debug("Returning a result of size {}", topicPartitionsAssigned.size());
+            return this.topicPartitionsAssigned;
         } else {
             log.debug("No assigned topic partitions");
             return new HashSet<>();
         }
-        return this.topicPartitionsAssigned;
     }
 
     /**
@@ -166,12 +164,13 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public Set<String> subscription() {
-        log.trace("subscription() invoked");
+        log.trace("subscription()");
         return this.readersByStream.keySet();
     }
 
     @Override
     public void subscribe(Collection<String> topics) {
+        log.trace("subscribe(topics)");
         subscribe(topics, null);
     }
 
@@ -201,20 +200,23 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void subscribe(Pattern pattern, ConsumerRebalanceListener callback) {
-        log.trace("Subscribe with pattern {} and callback called", pattern);
+        log.trace("subscribe({}, callback)", pattern);
         throw new UnsupportedOperationException("Subscribing to topic(s) matching specified pattern is not supported");
     }
 
     @Override
     public void subscribe(Pattern pattern) {
+        log.trace("subscribe({})", pattern);
         subscribe(pattern, null);
     }
 
     @Override
     public void unsubscribe() {
+        log.trace("unsubscribe(). Un-subscribing from all topics");
         ensureNotClosed();
-        log.trace("Un-subscribing from all topics");
         closeAllReaders();
+
+        // Reinitialize
         readersByStream = new HashMap<>();
     }
 
@@ -255,7 +257,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public void assign(@NonNull Collection<TopicPartition> partitions) {
-        log.trace("assign(partitions) called with partitions: {}", partitions);
+        log.trace("assign(partitions)");
 
         if (partitions.size() < 1) {
             throw new IllegalArgumentException("Empty partitions specified");
@@ -267,13 +269,12 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         //  of them.
         log.debug("invoking subscribe for topics {}", topics);
         this.subscribe(topics);
-
         this.topicPartitionsAssigned = new HashSet<>(partitions);
-        // Flink Kafka connector uses it.
     }
 
     @Override
     public ConsumerRecords<K, V> poll(Duration timeout) {
+        log.trace("poll(duration)");
         return poll(timeout.toMillis());
     }
 
@@ -285,6 +286,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
      */
     @Override
     public ConsumerRecords<K, V> poll(long timeout) {
+        log.trace("poll(timeout)");
         ensureNotClosed();
         if (timeout <= -1) {
             throw new IllegalArgumentException("Specified timeout is a negative value");
@@ -403,7 +405,6 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         // Refers to the offset that points to the record in a partition
         return new ConsumerRecord(stream, DUMMY_PARTITION_NUM, DUMMY_OFFSET, NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE,
                 NULL_CHECKSUM, NULL_SIZE, NULL_SIZE, null, event.getEvent());
-
     }
 
     private ConsumerRecords invokeInterceptors(List<ConsumerInterceptor<K, V>> interceptors,
@@ -424,66 +425,66 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @Override
     public void commitSync() {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitSync() invoked");
+        log.trace("commitSync()");
     }
 
     @Override
     public void commitSync(Duration timeout) {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitSync(timeout) invoked with timeout: {}", timeout);
+        log.trace("commitSync(duration)");
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets) {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitSync(offsets) invoked");
+        log.trace("commitSync(offsets)");
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets, Duration timeout) {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitSync(offsets, timeout) invoked");
+        log.trace("commitSync(offsets, timeout)");
     }
 
     @Override
     public void commitAsync() {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitAsync() invoked");
+        log.trace("commitAsync()");
     }
 
     @Override
     public void commitAsync(OffsetCommitCallback callback) {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitAsync(callback) invoked");
+        log.trace("commitAsync(callback)");
     }
 
     @Override
     public void commitAsync(Map<TopicPartition, OffsetAndMetadata> offsets, OffsetCommitCallback callback) {
         // Pravega always "commits", nothing special to do.
-        log.trace("commitAsync(offsets, callback) invoked");
+        log.trace("commitAsync(offsets, callback)");
     }
 
     @Override
     public void seek(TopicPartition partition, long offset) {
-        log.trace("seek(partition, offset) invoked");
+        log.trace("seek(partition, offset)");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seek(TopicPartition partition, OffsetAndMetadata offsetAndMetadata) {
-        log.trace("seek(partition, offsetAndMetadata) invoked");
+        log.trace("seek(partition, offsetAndMetadata)");
         throw new UnsupportedOperationException("Seek is not supported");
     }
 
     @Override
     public void seekToBeginning(Collection<TopicPartition> partitions) {
         log.trace("seekToBeginning(partitions) invoked");
-        throw new UnsupportedOperationException("Seek is not supported");
+        throw new UnsupportedOperationException("seekToBeginning is not supported");
     }
 
     @Override
     public void seekToEnd(@NonNull Collection<TopicPartition> partitions) {
-        log.debug("seekToEnd(partitions) invoked");
+        log.trace("seekToEnd(partitions)");
         if (partitions.size() < 1) {
             throw new IllegalArgumentException("Empty partitions specified");
         }
@@ -528,42 +529,43 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public long position(TopicPartition partition) {
+        log.trace("position(partition)");
         return position(partition, Duration.ofSeconds(Integer.MAX_VALUE));
     }
 
     @Override
     public long position(TopicPartition partition, Duration timeout) {
-        log.trace("position(partition, timeout) invoked");
+        log.trace("position(partition, duration)");
         return -1;
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition) {
-        log.trace("committed(partition) invoked");
+        log.trace("committed(partition)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public OffsetAndMetadata committed(TopicPartition partition, Duration timeout) {
-        log.trace("committed(partition, timeout) invoked");
+        log.trace("committed(partition, timeout)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions) {
-        log.trace("committed(partitions) invoked");
+        log.trace("committed(partitions)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndMetadata> committed(Set<TopicPartition> partitions, Duration timeout) {
-        log.trace("committed(partitions, timeout) invoked");
+        log.trace("committed(partitions, duration)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<MetricName, ? extends Metric> metrics() {
-        log.trace("metrics() invoked");
+        log.trace("metrics()");
         // We don't throw an unsupported exception here so that clients such as Flink Kafka Connector don't encounter
         // an exception.
         return new HashMap<>();
@@ -571,13 +573,13 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic) {
-        log.trace("partitionsFor(topic) invoked");
+        log.trace("partitionsFor(topic)");
         return partitionsFor(topic, Duration.ofMillis(200));
     }
 
     @Override
     public List<PartitionInfo> partitionsFor(String topic, Duration timeout) {
-        log.trace("partitionsFor(topic, timeout) invoked");
+        log.trace("partitionsFor(topic, timeout)");
 
         // This method is internally invoked by Flink Kafka adapter.
         PartitionInfo info = new PartitionInfo(topic, 0, null, null, null);
@@ -588,7 +590,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public Map<String, List<PartitionInfo>> listTopics() {
-        log.trace("listTopics() invoked");
+        log.trace("listTopics()");
         final Map<String, List<PartitionInfo>> result = new HashMap<>();
         this.readersByStream.keySet().stream().forEach(topic ->
                 result.put(topic, Arrays.asList(
@@ -600,6 +602,7 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     @SneakyThrows
     @Override
     public Map<String, List<PartitionInfo>> listTopics(Duration timeout) {
+        log.trace("listTopics(timeout)");
         return SimpleTimeLimiter.create(asyncTasksExecutor).callWithTimeout(
                 () -> listTopics(),
                 timeout.toNanos(), TimeUnit.NANOSECONDS);
@@ -607,68 +610,75 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public Set<TopicPartition> paused() {
-        log.trace("paused() invoked");
+        log.trace("paused()");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void pause(Collection<TopicPartition> partitions) {
-        log.trace("pause(partitions) invoked");
+        log.trace("pause(partitions)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void resume(Collection<TopicPartition> partitions) {
-        log.trace("resume(partitions) invoked");
+        log.trace("resume(partitions)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch) {
-        log.trace("offsetsForTimes(timestampsToSearch) invoked");
+        log.trace("offsetsForTimes(timestampsToSearch)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(Map<TopicPartition, Long> timestampsToSearch,
                                                                    Duration timeout) {
-        log.trace("offsetsForTimes(timestampsToSearch, timeout) invoked");
+        log.trace("offsetsForTimes(timestampsToSearch, timeout)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions) {
+        log.trace("beginningOffsets(partitions)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> beginningOffsets(Collection<TopicPartition> partitions, Duration timeout) {
+        log.trace("beginningOffsets(partitions, duration)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> endOffsets(Collection<TopicPartition> partitions) {
+        log.trace("endOffsets(partitions)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public Map<TopicPartition, Long> endOffsets(Collection<TopicPartition> partitions, Duration timeout) {
+        log.trace("endOffsets(partitions, duration)");
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void close() {
+        log.trace("close()");
         close(Duration.ofNanos(Long.MAX_VALUE));
     }
 
     @SneakyThrows
     @Override
     public void close(long timeout, TimeUnit unit) {
+        log.trace("close(timeout, timeunit");
         SimpleTimeLimiter.create(asyncTasksExecutor).runWithTimeout(() -> cleanup(), timeout, unit);
     }
 
     @Override
     public void close(Duration timeout) {
+        log.trace("close(duration)");
         close(timeout.toNanos(), TimeUnit.NANOSECONDS);
     }
 
@@ -682,8 +692,8 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void wakeup() {
+        log.trace("wakeup()");
         // Is invoked by Flink Kafka Connector
-        log.debug("wakeup() invoked");
         isWoken.set(true);
     }
 
@@ -700,4 +710,3 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
         }
     }
 }
-
