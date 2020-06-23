@@ -424,43 +424,36 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
 
     @Override
     public void commitSync() {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitSync()");
     }
 
     @Override
     public void commitSync(Duration timeout) {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitSync(duration)");
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitSync(offsets)");
     }
 
     @Override
     public void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets, Duration timeout) {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitSync(offsets, timeout)");
     }
 
     @Override
     public void commitAsync() {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitAsync()");
     }
 
     @Override
     public void commitAsync(OffsetCommitCallback callback) {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitAsync(callback)");
     }
 
     @Override
     public void commitAsync(Map<TopicPartition, OffsetAndMetadata> offsets, OffsetCommitCallback callback) {
-        // Pravega always "commits", nothing special to do.
         log.trace("commitAsync(offsets, callback)");
     }
 
