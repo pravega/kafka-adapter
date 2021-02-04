@@ -289,7 +289,7 @@ public class PravegaKafkaConsumerTests {
     public void listTopicsTimesOurWhenTimeoutIsTooLow() {
         try (Consumer<String, Object> consumer = new PravegaKafkaConsumer<>(prepareDummyConsumerConfig())) {
             Collection<String> topics = new ArrayList<>();
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000; i++) {
                 topics.add("topic" + i);
             }
             consumer.subscribe(topics);
