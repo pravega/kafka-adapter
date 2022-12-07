@@ -286,7 +286,7 @@ public class PravegaKafkaConsumerTests {
     }
 
     @Test(expected = TimeoutException.class)
-    public void listTopicsTimesOurWhenTimeoutIsTooLow() {
+    public void listTopicsTimesOutWhenTimeoutIsTooLow() {
         try (Consumer<String, Object> consumer = new PravegaKafkaConsumer<>(prepareDummyConsumerConfig())) {
             Collection<String> topics = new ArrayList<>();
             for (int i = 0; i < 1000; i++) {

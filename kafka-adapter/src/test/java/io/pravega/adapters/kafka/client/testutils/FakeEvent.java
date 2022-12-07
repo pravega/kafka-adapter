@@ -40,6 +40,11 @@ public class FakeEvent<T> implements EventRead<T> {
     }
 
     @Override
+    public boolean isReadCompleted() {
+        return false;
+    }
+
+    @Override
     public String getCheckpointName() {
         return null;
     }
