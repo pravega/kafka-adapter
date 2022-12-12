@@ -36,6 +36,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -95,6 +96,13 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
 
     @Override
     public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, String consumerGroupId)
+            throws ProducerFencedException {
+        log.trace("sendOffsetsToTransaction(...)");
+        throw new UnsupportedOperationException("Sending offsets to transaction is not supported");
+    }
+
+    @Override
+    public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets, ConsumerGroupMetadata groupMetadata)
             throws ProducerFencedException {
         log.trace("sendOffsetsToTransaction(...)");
         throw new UnsupportedOperationException("Sending offsets to transaction is not supported");
@@ -203,8 +211,7 @@ public class PravegaKafkaProducer<K, V> implements Producer<K, V> {
     }
 
     @SneakyThrows
-    @Override
-    public void close(long timeout, TimeUnit unit) {
+    private void close(long timeout, TimeUnit unit) {
         log.trace("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
         SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).runUninterruptiblyWithTimeout(() -> cleanup(),
                 timeout, unit);

@@ -13,15 +13,14 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -260,14 +259,30 @@ public class FakeKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     @Override
+    public OptionalLong currentLag(TopicPartition topicPartition) {
+        return null;
+    }
+
+    @Override
+    public ConsumerGroupMetadata groupMetadata() {
+        return null;
+    }
+
+    @Override
+    public void enforceRebalance() {
+
+    }
+
+    @Override
+    public void enforceRebalance(String reason) {
+
+    }
+
+    @Override
     public void close() {
         log.info("Closing the consumer");
     }
 
-    @Override
-    public void close(long timeout, TimeUnit unit) {
-        log.info("Closing the consumer with timeout{} and timeunit: {}", timeout, unit);
-    }
 
     @Override
     public void close(Duration timeout) {

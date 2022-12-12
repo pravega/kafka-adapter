@@ -9,7 +9,6 @@
  */
 package io.pravega.adapters.kafka.client.integrationtests;
 
-import io.pravega.adapters.kafka.client.common.ChecksumMaker;
 import io.pravega.adapters.kafka.client.testutils.FakeKafkaProducer;
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +55,7 @@ public class EmbeddedKafkaClusterUsageExamples {
     }
 
     @Test
-    public void reallyProduceData() throws ExecutionException, InterruptedException {
+    public void reallyProduceData() throws Exception {
         String topic = "topic.1";
 
         // Prepare producer configuration
@@ -133,8 +132,8 @@ public class EmbeddedKafkaClusterUsageExamples {
                 new ProducerRecord<>("test.topic.1", 1, "test-key", "test-value");
 
         Future<RecordMetadata> recordMedataFuture = kafkaProducer.send(producerRecord);
-        assertEquals(ChecksumMaker.computeCRC32Checksum(producerRecord.toString()),
-                recordMedataFuture.get().checksum());
+        assertEquals(producerRecord.partition().intValue(),
+                recordMedataFuture.get().partition());
     }
 
 }

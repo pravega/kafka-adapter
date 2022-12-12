@@ -9,9 +9,7 @@
  */
 package io.pravega.adapters.kafka.client.testutils;
 
-
 import io.pravega.adapters.kafka.client.common.ChecksumMaker;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,10 +19,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import lombok.extern.slf4j.Slf4j;
-
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -63,6 +59,14 @@ public class FakeKafkaProducer<K, V> implements Producer<K, V> {
             throws ProducerFencedException {
         log.debug("Arguments: offsets={}, consumerGroupId={}", offsets, consumerGroupId);
         log.debug("sending offsets to transaction");
+    }
+
+    @Override
+    public void sendOffsetsToTransaction(Map<TopicPartition, OffsetAndMetadata> offsets,
+                                         ConsumerGroupMetadata groupMetadata) throws ProducerFencedException {
+        log.debug("Arguments: offsets={}, consumerGroupMetadata={}", offsets, groupMetadata);
+        log.debug("sending offsets to transaction");
+
     }
 
     @Override
@@ -123,10 +127,6 @@ public class FakeKafkaProducer<K, V> implements Producer<K, V> {
         log.debug("Closing the producer");
     }
 
-    @Override
-    public void close(long timeout, TimeUnit unit) {
-        log.debug("Closing the producer with timeout{} and timeunit: {}", timeout, unit);
-    }
 
     @Override
     public void close(Duration timeout) {
