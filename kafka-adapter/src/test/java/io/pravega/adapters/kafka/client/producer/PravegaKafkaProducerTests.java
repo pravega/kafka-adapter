@@ -9,6 +9,7 @@
  */
 package io.pravega.adapters.kafka.client.producer;
 
+import io.pravega.adapters.kafka.client.dataaccess.Writer;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,10 +17,7 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.pravega.adapters.kafka.client.dataaccess.Writer;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -58,7 +56,7 @@ public class PravegaKafkaProducerTests {
 
     @Test(expected = UnsupportedOperationException.class)
     public void sendOffsetsToTransactionThrowsException() {
-        new PravegaKafkaProducer<>(prepareDummyMinimalConfig()).sendOffsetsToTransaction(null, null);
+        new PravegaKafkaProducer<>(prepareDummyMinimalConfig()).sendOffsetsToTransaction(null, "");
     }
 
     @Test
@@ -299,7 +297,7 @@ public class PravegaKafkaProducerTests {
         verify(mockWriter, times(1)).close();
 
         reset(mockWriter);
-        producer.close(200, TimeUnit.MILLISECONDS);
+        producer.close(Duration.ofMillis(200));
         verify(mockWriter, times(1)).close();
     }
 

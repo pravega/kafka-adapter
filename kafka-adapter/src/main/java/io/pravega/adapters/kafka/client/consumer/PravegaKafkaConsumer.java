@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -47,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -657,14 +659,37 @@ public class PravegaKafkaConsumer<K, V> implements Consumer<K, V> {
     }
 
     @Override
+    public OptionalLong currentLag(TopicPartition topicPartition) {
+        log.trace("currentLag(topicPartition)");
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public ConsumerGroupMetadata groupMetadata() {
+        log.trace("groupMetadata()");
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public void enforceRebalance() {
+        log.trace("enforceRebalance()");
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public void enforceRebalance(String reason) {
+        log.trace("enforceRebalance(reason)");
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
     public void close() {
         log.trace("close()");
         close(Duration.ofNanos(Long.MAX_VALUE));
     }
 
     @SneakyThrows
-    @Override
-    public void close(long timeout, TimeUnit unit) {
+    private void close(long timeout, TimeUnit unit) {
         log.trace("close(timeout, timeunit");
         SimpleTimeLimiter.create(asyncTasksExecutor).runWithTimeout(() -> cleanup(), timeout, unit);
     }

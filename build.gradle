@@ -52,6 +52,7 @@ allprojects {
 		compile group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
 		compile group: "org.projectlombok", name: "lombok", version: "${lombokVersion}"
 		compile group: "com.github.spotbugs", name: "spotbugs-annotations", version: "${spotbugsAnnotationsVersion}"
+		compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${jacksonDatabind}"
 
 		testCompile group: "junit", name: "junit", version: "${junitVersion}"
 		testCompile group: "org.mockito", name: "mockito-core", version: "${mockitoVersion}"
